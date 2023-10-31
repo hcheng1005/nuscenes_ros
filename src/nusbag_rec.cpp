@@ -12,6 +12,10 @@ LidarCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_ptr)
 {
   std::cout << cloud_ptr->header.stamp << ": "
             << "Rec new Msg: [Lidar TOP] " << std::endl;
+
+  // centerpoint.prepare();
+
+  // step 2: run lidar infer
 }
 
 void
