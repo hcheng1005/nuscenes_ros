@@ -226,6 +226,10 @@ void lidar_callback(const sensor_msgs::PointCloud2ConstPtr& msg)
 }
 
 
+void imu_callback(sensor_msgs::IMU)
+{
+
+}
 
 /**
  * @names:
@@ -237,8 +241,10 @@ void lidar_callback(const sensor_msgs::PointCloud2ConstPtr& msg)
 int main(int argc, char* argv[])
 {
   ros::init(argc, argv, "nus_lidar");
-  ros::NodeHandle n1, det_node, trace_node;
-  ros::Subscriber point_sub = n1.subscribe("/lidar_top", 1, lidar_callback);
+  ros::NodeHandle lidar_top_rec_node, imu_rec_node;
+  ros::NodeHandle det_node, trace_node;
+  ros::Subscriber point_sub = lidar_top_rec_node.subscribe("/lidar_top", 1, lidar_callback); // 接收点云msg
+  ros::Subscriber imu_sub = imu_rec_node.subscribe("/imu", 1, imu_callback); // 接收点云msg
 
   // 检测结果可视化
   det_array_pub_ = det_node.advertise<visualization_msgs::MarkerArray>("det", 100);

@@ -45,6 +45,8 @@ private:
 
     void creat_det_box(std::vector<Bndbox>& det_boxes,
         std::vector<box_t>& det_box_list);
+        
+    void do_nms(std::vector<Bndbox>& det_boxes);
 
     void re_compute_shape(box_t& sub_det_box);
 

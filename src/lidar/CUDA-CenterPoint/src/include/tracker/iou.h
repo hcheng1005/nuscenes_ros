@@ -55,7 +55,14 @@ bool cmp_(MyPoint &p1, MyPoint &p2);
 void find_convex_hull(std::vector<MyPoint> points, MyPoint p0);
 double compute_convexHullArea(const rect_corners_struct &r1, const rect_corners_struct &r2);
 
-double IOU_2D(const rect_basic_struct &rect_1, const rect_basic_struct &rect_2);
+bool comparePoints(MyPoint p1, MyPoint p2);
+std::vector<MyPoint> convexHull(std::vector<MyPoint> points);
+int orientation(MyPoint p, MyPoint q, MyPoint r);
 
+// 计算各类IOU
+double IOU_2D(const rect_basic_struct &rect_1, const rect_basic_struct &rect_2);
+double IOU_3D(const rect_basic_struct &rect_1, const rect_basic_struct &rect_2);
+double GIOU_2D(const rect_basic_struct &rect_1, const rect_basic_struct &rect_2);
+double GIOU_3D(const rect_basic_struct &rect_1, const rect_basic_struct &rect_2);
 
 #endif

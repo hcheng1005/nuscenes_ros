@@ -10,6 +10,7 @@
 // ROS
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
+#include "sensor_msgs/Imu.h"
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <tf2/LinearMath/Quaternion.h>

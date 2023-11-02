@@ -1,4 +1,4 @@
-#include "nuscenes2bag/ImuDirectoryConverter.hpp"
+#include "../include/nuscenes2bag/ImuDirectoryConverter.hpp"
 #include "nuscenes2bag/utils.hpp"
 #include <thread>
 

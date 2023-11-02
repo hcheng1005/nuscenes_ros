@@ -93,6 +93,9 @@ void lidar_tracker::creat_det_box(std::vector<Bndbox>& det_boxes,
     std::vector<box_t>& det_box_list) {
     uint32_t id = 0;
 
+    // 先执行nms
+    do_nms(det_boxes);
+
     for (auto det : det_boxes) {  // 获取检测结果
         box_t sub_det_box;
         sub_det_box.id = id;
@@ -128,6 +131,69 @@ void lidar_tracker::creat_det_box(std::vector<Bndbox>& det_boxes,
     }
 }
 
+/**
+ * @names: 
+ * @description: Briefly describe the function of your function
+ * @return {*}
+ */
+void lidar_tracker::do_nms(std::vector<Bndbox>& det_boxes)
+{
+    // do global nms
+    std::vector<Bndbox> result;
+    double nms_iou_gate = 0.01;
+
+    // step 1: 根据score从大到小排列
+    std::sort(det_boxes.begin(), det_boxes.end(), [](const Bndbox& a, const Bndbox& b)
+        { return (a.score >= b.score); });
+
+    double iou_;
+
+    std::cout << "Before NMS: " << det_boxes.size();
+
+    while (!det_boxes.empty())
+    {
+        Bndbox current = det_boxes[0];
+        result.push_back(current);
+        det_boxes.erase(det_boxes.begin());
+
+        // step 2：遍历剩余box
+        for (auto it = det_boxes.begin(); it != det_boxes.end();)
+        {
+            // 计算IOU并与给定门限比较，决定是否删除该目标
+
+            rect_basic_struct rect_1, rect_2;
+            rect_1.box_len = current.l;
+            rect_1.box_wid = current.w;
+            rect_1.box_height = current.h;
+            rect_1.heading = current.rt;
+            rect_1.center_pos[0] = current.x;
+            rect_1.center_pos[1] = current.y;
+            rect_1.center_pos[2] = current.z;
+
+            rect_2.box_len = (*it).l;
+            rect_2.box_wid = (*it).w;
+            rect_2.box_height = (*it).h;
+            rect_2.heading = (*it).rt;
+            rect_2.center_pos[0] = (*it).x;
+            rect_2.center_pos[1] = (*it).y;
+            rect_2.center_pos[2] = (*it).z;
+
+
+            iou_ = IOU_2D(rect_1, rect_2);
+            if (iou_ > nms_iou_gate)
+            {
+                it = det_boxes.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+    }
+
+    det_boxes = result;
+    std::cout << "After NMS: " << result.size();
+}
 
 /**
  * @names:
@@ -362,7 +428,7 @@ void lidar_tracker::assignment(const std::vector<greedy_match_info_t>& cost_matr
             }
         }
     }
-    }
+}
 #endif
 
 /**
