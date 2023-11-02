@@ -61,7 +61,8 @@ set(SRCS
     src/MetaDataReader.cpp
     src/MetaData.cpp
     src/SceneConverter.cpp
-    src/utils.cpp)
+    src/utils.cpp
+    src/VehicleDirectoryConverter.cpp)
 
 add_executable(${PROJECT_NAME} ${SRCS} src/main.cpp)
 
@@ -88,5 +89,3 @@ install(DIRECTORY include/${PROJECT_NAME}/ thirdparty/json/
         FILES_MATCHING
         PATTERN "*.h"
         PATTERN ".svn" EXCLUDE)
-add_executable(rec_ src/nusbag_rec.cpp)
-target_link_libraries(rec_ ${catkin_LIBRARIES})

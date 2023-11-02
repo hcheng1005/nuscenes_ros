@@ -8,6 +8,7 @@
 #include "nuscenes2bag/LidarDirectoryConverterXYZIR.hpp"
 #include "nuscenes2bag/RadarDirectoryConverter.hpp"
 #include "nuscenes2bag/ImuDirectoryConverter.hpp"
+#include "nuscenes2bag/VehicleDirectoryConverter.hpp"
 
 #include <array>
 #include <iostream>
@@ -100,7 +101,10 @@ SceneConverter::run(const fs::path& inPath,
     auto sceneName = sceneInfoOpt.value().name;
     fs::path imuPath = inPath / "can_bus" / (sceneName + "_ms_imu.json");
     std::cout << "Got imu json path:" << imuPath << std::endl;
+    fs::path vehiclePath = inPath / "can_bus" / (sceneName + "_pose.json");
+    std::cout << "Got vehicle json path:" << vehiclePath << std::endl;
     convertImuDatas(outBag, imuPath);
+    convertVehicleDatas(outBag, vehiclePath);
   }
   std::cout << "End processing IMU data" << std::endl;
   convertEgoPoseInfos(outBag, sensorInfos);
@@ -120,6 +124,21 @@ SceneConverter::convertImuDatas(rosbag::Bag& outBag, const fs::path &inPath)
   for (const auto& imuData: imuDatas) {
     auto msg = readImuFile(imuData);
     writeMsg(topicName, "imu", imuData.utime, outBag, msg);
+  }
+}
+
+
+void
+SceneConverter::convertVehicleDatas(rosbag::Bag& outBag, const fs::path &inPath)
+{
+  std::cout << "Retrieving vehicle data" << std::endl;
+  auto vehicleDatas = metaDataProvider.getVehicleData(inPath);
+  std::cout << "End retrieving vehicle data" << std::endl;
+  auto topicName = "/vehicle";
+  std::cout << "Writing vehicle msgs" << std::endl;
+  for (const auto& vehicleData: vehicleDatas) {
+    auto msg = readVehicleFile(vehicleData);
+    writeMsg(topicName, "vehicle", vehicleData.utime, outBag, msg);
   }
 }
 
