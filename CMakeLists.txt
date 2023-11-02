@@ -55,6 +55,7 @@ set(SRCS
     src/LidarDirectoryConverter.cpp
     src/LidarDirectoryConverterXYZIR.cpp
     src/RadarDirectoryConverter.cpp
+    src/ImuDirectoryConverter.cpp
     src/NuScenes2Bag.cpp
     src/FileProgress.cpp
     src/MetaDataReader.cpp
@@ -87,6 +88,5 @@ install(DIRECTORY include/${PROJECT_NAME}/ thirdparty/json/
         FILES_MATCHING
         PATTERN "*.h"
         PATTERN ".svn" EXCLUDE)
-
 add_executable(rec_ src/nusbag_rec.cpp)
 target_link_libraries(rec_ ${catkin_LIBRARIES})
