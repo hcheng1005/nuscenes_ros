@@ -22,32 +22,43 @@
 cmake_minimum_required(VERSION 3.8) # C++17 support was added in CMake 3.8
 project(nus_centerpoint)
 set(arch ${CMAKE_HOST_SYSTEM_PROCESSOR})
+set(CMAKE_CXX_STANDARD 14)
 
+set(CMAKE_BUILD_TYPE Release) # Debug, Release, RelWithDebInfo
 set(TENSORRT_ROOT         /data/package/TensorRT-8.2.0.6)
 
-set(CMAKE_BUILD_TYPE "Release")
-set(CMAKE_CXX_FLAGS_RELEASE "-std=c++14 -Wextra -Wall -Wno-deprecated-declarations -O3")
+# set(CMAKE_BUILD_TYPE "Release")
+# set(CMAKE_CXX_FLAGS_RELEASE "-std=c++14 -Wextra -Wall -Wno-deprecated-declarations -O3")
 set(TENSORRT_INCLUDE ${TENSORRT_ROOT}/include)
 set(TENSORRT_LIB     ${TENSORRT_ROOT}/lib)
 
+set(CUDA_ROOT         /usr/local/cuda-11.4)
 find_package(CUDA REQUIRED)
-if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-  message("Using Debug Mode")
-  set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -g -G --ptxas-options=-v)
-endif()
+# if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+#   message("Using Debug Mode")
+#   set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -g -G --ptxas-options=-v)
+# endif()
+
+find_package(PCL REQUIRED)
+find_package(catkin REQUIRED COMPONENTS
+  roscpp
+  std_msgs
+  tf
+  nav_msgs
+  sensor_msgs
+  visualization_msgs
+  cmake_modules REQUIRED
+  message_generation
+)
 
 include_directories(
   ${CUDA_INCLUDE_DIRS}
   ${TENSORRT_INCLUDE}
   3rdparty/libspconv/include
-  include
+  ./include/
+  ${catkin_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS} 
 )
-
-find_package(catkin REQUIRED COMPONENTS roscpp)
-find_package(OpenCV REQUIRED core)
-find_package(PCL REQUIRED)
-
-include_directories(src/include/ ${catkin_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS} )
 
 link_directories(
   ${TENSORRT_LIB}
@@ -58,19 +69,9 @@ link_directories(
 file(GLOB_RECURSE SOURCE_FILES 
   src/*.cu 
   src/*.cpp
+  src/tracker/*.cc
 )
 
-find_package(catkin
-             REQUIRED
-             rosbag
-             sensor_msgs
-             pcl_conversions
-             pcl_msgs
-             message_generation
-             geometry_msgs
-             std_msgs
-             nav_msgs
-             tf)
 
 catkin_package(INCLUDE_DIRS
                include

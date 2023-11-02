@@ -21,7 +21,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
  
-#include "kernel.h"
+#include "../include/kernel.h"
 
 #define HALF_PI  (3.141592653 * 0.5)
 

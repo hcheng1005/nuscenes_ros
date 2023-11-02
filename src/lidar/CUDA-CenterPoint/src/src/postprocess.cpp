@@ -21,7 +21,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
  
-#include "postprocess.h"
+#include "../include/postprocess.h"
 #include <iostream>
 #include <vector>
 

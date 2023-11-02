@@ -21,7 +21,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
  
-#include "preprocess.h"
+#include "../include/preprocess.h"
 #include <assert.h>
 #include <iostream>
 
@@ -75,6 +75,9 @@ int PreProcessCuda::alloc_resource(){
     checkCudaErrors(cudaMemset(d_voxel_features_, 0, voxel_features_size_));
     checkCudaErrors(cudaMemset(d_voxel_indices_, 0, voxel_idxs_size_));
     checkCudaErrors(cudaMemset(d_real_num_voxels_, 0, sizeof(unsigned int)));
+
+
+    std::cout << "voxels_temp_size_: " << voxels_temp_size_ << ", voxel_features_size_" << voxel_features_size_ << std::endl;
 
     return 0;
 }

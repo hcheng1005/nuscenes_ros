@@ -21,7 +21,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
  
-#include "tensorrt.hpp"
+#include "../include/tensorrt.hpp"
 #include <cuda_runtime.h>
 #include "NvInfer.h"
 #include "NvInferRuntime.h"

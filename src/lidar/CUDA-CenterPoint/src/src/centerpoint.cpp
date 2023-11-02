@@ -21,7 +21,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "centerpoint.h"
+#include "../include/centerpoint.h"
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -37,6 +37,7 @@
 #include <math.h>
 #include <sys/time.h>
 #include <unistd.h>
+
 
 template <typename T>
 double getAverage(std::vector<T> const &v)
@@ -247,9 +248,6 @@ int CenterPoint::doinfer(void *points, unsigned int point_num, cudaStream_t stre
     if (verbose_)
     {
         std::cout << "Detection NUM: " << nms_pred_.size() << std::endl;
-        // for(int loop = 0; loop<nms_pred_.size();loop++){
-        //     printf("%d, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n", loop, nms_pred_[loop].x, nms_pred_[loop].y,nms_pred_[loop].z,nms_pred_[loop].w,nms_pred_[loop].l,nms_pred_[loop].h,nms_pred_[loop].vx,nms_pred_[loop].vy,nms_pred_[loop].rt,nms_pred_[loop].score);
-        // }
     }
     return 0;
 }
