@@ -153,6 +153,26 @@ void calculateBoxCorners(Point3D center, double length, double width, double hei
     for (int i = 0; i < 8; ++i) {
         std::cout << "Corner " << i + 1 << ": (" << corners[i].x << ", " << corners[i].y << ", " << corners[i].z << ")\n";
     }
+
+
+    //     double halfLength = length / 2;
+    // double halfWidth = width / 2;
+    // double halfHeight = height / 2;
+
+    // // Define the transformation matrix
+    // Matrix3d R;
+    // R << cos(yaw), -sin(yaw), 0,
+    //      sin(yaw), cos(yaw), 0,
+    //      0, 0, 1;
+
+    // // Define the local corner points
+    // Matrix<double, 3, 8> localCorners;
+    // localCorners << halfLength, halfLength, halfLength, halfLength, -halfLength, -halfLength, -halfLength, -halfLength,
+    //                 halfWidth, halfWidth, -halfWidth, -halfWidth, halfWidth, halfWidth, -halfWidth, -halfWidth,
+    //                 halfHeight, -halfHeight, halfHeight, -halfHeight, halfHeight, -halfHeight, halfHeight, -halfHeight;
+
+    // // Transform local corners to global coordinates
+    // Matrix<double, 3, 8> globalCorners = R * localCorners;
 }
 
 void pub_trace_box(void)
@@ -221,7 +241,7 @@ void pub_trace_box(void)
     Point3D center{ 0, 10,1.0};
     std::vector<Point3D> corners;
     corners.resize(8);
-    calculateBoxCorners(center,  2, 4, 1.8, 0.0, corners);
+    calculateBoxCorners(center, 2, 4, 1.8, 0.0, corners);
     
     uint cor_seq[12][2] = {{0, 1}, {1, 2}, {2, 3}, {3, 0}, {4, 5}, {5, 6},
          {6, 7}, {7, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7}};
@@ -232,6 +252,7 @@ void pub_trace_box(void)
       p.x = corners[cor_seq[corner_idx][0]].x;
       p.y = corners[cor_seq[corner_idx][0]].y;
       p.z = corners[cor_seq[corner_idx][0]].z;
+
       points.push_back(p);
       p.x = corners[cor_seq[corner_idx][1]].x;
       p.y = corners[cor_seq[corner_idx][1]].y;
