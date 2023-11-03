@@ -29,20 +29,16 @@
 #endif
 
 
-// #define LOG_OUTPUT
-
-//#define ARS548_RADAR
-
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
 #define TRACE_PROB_LIMIT        (5.0)
-#define TRACE_ACTIVE_SAMLL_TAR  (0.5)
-#define TRACE_ACTIVE_PERCENT    (0.8)
+#define TRACE_ACTIVE_SAMLL_TAR  (0.2)
+#define TRACE_ACTIVE_PERCENT    (0.4)
 
-#define TRACE_FINAL_CONFIRM_PERCENT_EX_SMALL (0.6)
+#define TRACE_FINAL_CONFIRM_PERCENT_EX_SMALL (0.3)
 //#define TRACE_FINAL_CONFIRM_PERCENT_SMALL (0.7)
-#define TRACE_FINAL_CONFIRM_PERCENT_BIG (0.9)
+#define TRACE_FINAL_CONFIRM_PERCENT_BIG (0.5)
 
 #define TRACE_DELETE_PERCENT    (0.3)
 

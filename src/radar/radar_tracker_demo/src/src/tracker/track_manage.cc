@@ -4,7 +4,7 @@
  * @Author: ChengHao
  * @Date: 2022-10-08 14:04:46
  * @LastEditors: ChengHao hao.cheng@wuzheng.com
- * @LastEditTime: 2023-11-03 15:06:41
+ * @LastEditTime: 2023-11-03 16:30:35
  */
 
 #include "track_manage.h"
@@ -202,9 +202,9 @@ void track_manage_unconfirmedtrace(trackTable_strcut *trace,
 
   uint8_t NM1, NM2;
 
-    trace->ManageInfo.NM_SUM = 10;
-    NM1 = 7;
-    NM2 = 7;
+  trace->ManageInfo.NM_SUM = 10;
+  NM1 = 7;
+  NM2 = 7;
 
   // 计算MN数值
   uint8_t nm[2] = {0U, 0U};
@@ -228,12 +228,9 @@ void track_manage_unconfirmedtrace(trackTable_strcut *trace,
   {
       if((trace->ManageInfo.HighProCount >= high_num) && (nm[0] >= NM2) && (nm[1] >= NM1) )
       {
-//          if(fabs(atan((trace->KalmanInfo.StateEst(iDistLat) - RADAR_MOUNT_X) / trace->KalmanInfo.StateEst(iDistLong) )) < (45.0 * DEG2RAD))
-//          {
-              trace->trackState = TRACK_STATE_ACTIVE;
-              trace->ManageInfo.tracking2missCount = 0U;
-              trace->ManageInfo.detect2missCount = 0U;
-//          }
+          trace->trackState = TRACK_STATE_ACTIVE;
+          trace->ManageInfo.tracking2missCount = 0U;
+          trace->ManageInfo.detect2missCount = 0U;
       }
   }
 
@@ -242,7 +239,6 @@ void track_manage_unconfirmedtrace(trackTable_strcut *trace,
   {
     track_clear(trace);
   }
-
 
   if ((trace->TCount > 20) && (trace->ExtendInfo.ProbOfExist < (TRACE_PROB_LIMIT * 0.7)))
   {

@@ -4,7 +4,7 @@
  * @Author: ChengHAO
  * @Date: 2022-09-05 18:11:33
  * @LastEditors: ChengHao hao.cheng@wuzheng.com
- * @LastEditTime: 2023-06-06 13:20:47
+ * @LastEditTime: 2023-11-03 15:37:30
  */
 
 #include "match.h"
@@ -173,18 +173,19 @@ void dynamic_trace_assigned_with_point(
     const std::vector<std::vector<uint16_t>> all_assigned_box,
     const std::vector<std::vector<uint16_t>> &clusterSet,
     const std::vector<det_box_t> &det_box_list) {
+
   VectorXd measData2 = VectorXd(2);
 
-  double likeliHood_pos_big, likeliHood_pos_small;
-
   for (uint8_t trackidx = 0; trackidx < TraceSet.size(); trackidx++) {
-    if (all_assigned_box
-            .at(all_assigned_box.size() - TraceSet.size() + trackidx)
-            .size() == 0) {
+    // 本次是否关联到目标
+    if (all_assigned_box.at(all_assigned_box.size() - TraceSet.size() + trackidx).size() == 0) {
       continue;
     }
-    trackTable_strcut *trace =
-        &trackInfo[TraceSet.at(trackidx)];  // 获取索引号对应的真正的航迹序号
+
+    trackTable_strcut *trace = &trackInfo[TraceSet.at(trackidx)];  // 获取索引号对应的真正的航迹序号
+
+    std::cout << "Matched !" << "Trace ID:[ " <<  trace->trackID << "] "
+              << trace->KalmanInfo.StateEst(iDistLat) << ", " << trace->KalmanInfo.StateEst(iDistLong) << std::endl;
 
     Eigen::Matrix2d rmm_temp, rmm_temp_inv, rmm_temp2, rmm_temp_inv2;
 
@@ -204,7 +205,6 @@ void dynamic_trace_assigned_with_point(
         compute_new_ellis_mat(trace, rmm_temp2, 0.5);
         rmm_temp_inv2 = rmm_temp2.inverse();
     }
-
 
     rect_point_struct trace_box;
     creat_rect_box_point(trace->KalmanInfo.StateEst(0),
@@ -251,10 +251,10 @@ void dynamic_trace_assigned_with_point(
         measData2 << detInfo.DistLong - trace->KalmanInfo.StateEst(1),
             detInfo.DistLat - trace->KalmanInfo.StateEst(0);
 
-        likeliHood_pos_big = measData2.transpose() * rmm_temp_inv * measData2;
+        double likeliHood_pos_big = measData2.transpose() * rmm_temp_inv * measData2;
         likeliHood_pos_big = exp(-0.5 * pow(likeliHood_pos_big, 2.0));
 
-        likeliHood_pos_small =
+        double likeliHood_pos_small =
             measData2.transpose() * rmm_temp_inv2 * measData2;
         likeliHood_pos_small = exp(-0.5 * pow(likeliHood_pos_small, 2.0));
 
@@ -293,81 +293,81 @@ void dynamic_trace_assigned_with_point(
     }
 
     // 统计所有关联点形成的box与航迹box的iou
-    if (0) {
-      if ((trace->ExtendInfo.Length > 6.0) &&
-          (fabs(trace->ExtendInfo.Orin_For_Display) < (10.0 * DEG2RAD))) {
-        auto meas_lat_minmax = std::minmax_element(xpos.begin(), xpos.end());
-        auto meas_long_minmax = std::minmax_element(ypos.begin(), ypos.end());
+    #if 0
+    if ((trace->ExtendInfo.Length > 6.0) &&
+        (fabs(trace->ExtendInfo.Orin_For_Display) < (10.0 * DEG2RAD))) {
+      auto meas_lat_minmax = std::minmax_element(xpos.begin(), xpos.end());
+      auto meas_long_minmax = std::minmax_element(ypos.begin(), ypos.end());
 
-        double len = (*meas_long_minmax.second - *meas_long_minmax.first);
-        double wid = (*meas_lat_minmax.second - *meas_lat_minmax.first);
+      double len = (*meas_long_minmax.second - *meas_long_minmax.first);
+      double wid = (*meas_lat_minmax.second - *meas_lat_minmax.first);
 
-        len = Valuelimit(0.5, len, len);
-        wid = Valuelimit(0.5, wid, wid);
+      len = Valuelimit(0.5, len, len);
+      wid = Valuelimit(0.5, wid, wid);
 
-        Eigen::MatrixXd meas_mat =
-            Eigen::MatrixXd(trace->MeasInfo.associateNum, 2);
-        Eigen::MatrixXd Y_hat = Eigen::MatrixXd::Zero(2, 2);
-        uint8_t idx = 0;
-        for (auto &dets : trace->MeasInfo.detInfo) {
-          meas_mat(idx, 0) = fifo_point[dets.cluster_Idx].DistLat;
-          meas_mat(idx, 1) = fifo_point[dets.cluster_Idx].DistLong;
-          idx++;
-        }
+      Eigen::MatrixXd meas_mat =
+          Eigen::MatrixXd(trace->MeasInfo.associateNum, 2);
+      Eigen::MatrixXd Y_hat = Eigen::MatrixXd::Zero(2, 2);
+      uint8_t idx = 0;
+      for (auto &dets : trace->MeasInfo.detInfo) {
+        meas_mat(idx, 0) = fifo_point[dets.cluster_Idx].DistLat;
+        meas_mat(idx, 1) = fifo_point[dets.cluster_Idx].DistLong;
+        idx++;
+      }
 
-        //        std::cout << meas_mat << std::endl;
+      //        std::cout << meas_mat << std::endl;
 
-        Eigen::MatrixXd y_hat = meas_mat.colwise().mean();
+      Eigen::MatrixXd y_hat = meas_mat.colwise().mean();
 
-        Eigen::RowVectorXd Z_mean(
-            Eigen::RowVectorXd::Map(y_hat.data(), meas_mat.cols()));
+      Eigen::RowVectorXd Z_mean(
+          Eigen::RowVectorXd::Map(y_hat.data(), meas_mat.cols()));
 
-        Eigen::MatrixXd ZK = meas_mat;
-        ZK.rowwise() -= Z_mean;
+      Eigen::MatrixXd ZK = meas_mat;
+      ZK.rowwise() -= Z_mean;
 
-        // 量测位置协方差矩阵
-        Y_hat = (ZK.adjoint() * ZK) / trace->MeasInfo.associateNum;
+      // 量测位置协方差矩阵
+      Y_hat = (ZK.adjoint() * ZK) / trace->MeasInfo.associateNum;
 
-        // 做特征值分解
-        Eigen::EigenSolver<Eigen::Matrix2d> es(Y_hat);
+      // 做特征值分解
+      Eigen::EigenSolver<Eigen::Matrix2d> es(Y_hat);
 
-        //        std::cout<< "track ID_____________________________________" <<
-        //        trace->trackID << std::endl;
+      //        std::cout<< "track ID_____________________________________" <<
+      //        trace->trackID << std::endl;
 
-        // 求解特征值
-        Eigen::MatrixXcd d = es.eigenvalues();
-        //        std::cout << d << std::endl;
-        Eigen::MatrixXcd evecs = es.eigenvectors();
-        MatrixXd B;
-        B = evecs.real();
-        //      std::cout << "evecs" << std::endl << evecs << std::endl;
-        //        std::cout << "B" << std::endl << B << std::endl;
+      // 求解特征值
+      Eigen::MatrixXcd d = es.eigenvalues();
+      //        std::cout << d << std::endl;
+      Eigen::MatrixXcd evecs = es.eigenvectors();
+      MatrixXd B;
+      B = evecs.real();
+      //      std::cout << "evecs" << std::endl << evecs << std::endl;
+      //        std::cout << "B" << std::endl << B << std::endl;
 
-        // 求解特征向量
-        Eigen::MatrixXcd evals = es.eigenvalues();
-        Eigen::MatrixXd D_temp, D;
-        D_temp = evals.real();
-        D = D_temp.asDiagonal();
-        //      std::cout << "evals" << std::endl << evals << std::endl;
-        //      std::cout << "D_temp" << std::endl << D_temp << std::endl;
-        //        std::cout << "D" << std::endl << D << std::endl;
+      // 求解特征向量
+      Eigen::MatrixXcd evals = es.eigenvalues();
+      Eigen::MatrixXd D_temp, D;
+      D_temp = evals.real();
+      D = D_temp.asDiagonal();
+      //      std::cout << "evals" << std::endl << evals << std::endl;
+      //      std::cout << "D_temp" << std::endl << D_temp << std::endl;
+      //        std::cout << "D" << std::endl << D << std::endl;
 
-        double len_scale = (len < trace->ExtendInfo.Length)
-                               ? (len / trace->ExtendInfo.Length)
-                               : (trace->ExtendInfo.Length / len);
-        double wid_scale = (wid < trace->ExtendInfo.Width)
-                               ? (wid / trace->ExtendInfo.Width)
-                               : (trace->ExtendInfo.Width / wid);
+      double len_scale = (len < trace->ExtendInfo.Length)
+                              ? (len / trace->ExtendInfo.Length)
+                              : (trace->ExtendInfo.Length / len);
+      double wid_scale = (wid < trace->ExtendInfo.Width)
+                              ? (wid / trace->ExtendInfo.Width)
+                              : (trace->ExtendInfo.Width / wid);
 
-        double fact_ = len_scale * wid_scale;
+      double fact_ = len_scale * wid_scale;
 
-        if ((fact_ < (1 / 4)) || ((fabs(wid - trace->ExtendInfo.Width) > 2.0) &&
-                                  (fabs(B(0, 0)) > 0.95))) {
-          trace->MeasInfo.associateNum = 0;
-          trace->MeasInfo.detInfo.clear();
-        }
+      if ((fact_ < (1 / 4)) || ((fabs(wid - trace->ExtendInfo.Width) > 2.0) &&
+                                (fabs(B(0, 0)) > 0.95))) {
+        trace->MeasInfo.associateNum = 0;
+        trace->MeasInfo.detInfo.clear();
       }
     }
+    #endif
   }
 }
 

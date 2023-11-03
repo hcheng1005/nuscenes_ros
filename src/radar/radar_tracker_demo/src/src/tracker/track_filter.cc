@@ -3,8 +3,8 @@
  * @version:
  * @Author: ChengHao
  * @Date: 2022-10-08 14:09:49
- * @LastEditors: chenghao hao.cheng@wuzheng.com
- * @LastEditTime: 2023-08-30 10:53:25
+ * @LastEditors: ChengHao hao.cheng@wuzheng.com
+ * @LastEditTime: 2023-11-03 15:41:45
  */
 
 #include "track_filter.h"
@@ -1175,7 +1175,7 @@ void UpdateSurvivalProb(trackTable_strcut *trace,
 
     /* 根据关联情况更新存在概率 */
     if (trace->trackState == TRACK_STATE_DETECTION) {
-      trace->ExtendInfo.ProbOfExist *= 0.9;
+      trace->ExtendInfo.ProbOfExist *= 0.95;
     }
 
     if (trace->MeasInfo.detInfo.size() > 0) {
@@ -1229,6 +1229,8 @@ void UpdateSurvivalProb(trackTable_strcut *trace,
         }
       }
     }
+
+    std::cout << "ProbOfExist of " << "Trace ID:[ " <<  trace->trackID << "] " << trace->ExtendInfo.ProbOfExist << std::endl;
 
     trace->ExtendInfo.ProbOfExist =
         Valuelimit(0.01, TRACE_PROB_LIMIT, trace->ExtendInfo.ProbOfExist);

@@ -3,8 +3,8 @@
  * @version:
  * @Author: ChengHao
  * @Date: 2022-10-08 11:43:18
- * @LastEditors: chenghao hao.cheng@wuzheng.com
- * @LastEditTime: 2023-08-30 10:53:52
+ * @LastEditors: ChengHao hao.cheng@wuzheng.com
+ * @LastEditTime: 2023-11-03 15:24:32
  */
 #include "track_process.h"
 
@@ -188,18 +188,6 @@ void point_cluster_and_fitting(std::vector<RadarMeasure_struct> &fifo_point,
     {
         det_box_list_all.push_back(det_box);
     }
-
-#ifdef QT_ENV_
-    static_dbscan_result.clear();
-    static_dbscan_result.shrink_to_fit();
-
-    static_dbscan_result = clusterSet_static;
-
-    for (auto temp : clusterSet_dynamic)
-    {
-        static_dbscan_result.push_back(temp);
-    }
-#endif
 }
 
 /**
@@ -371,9 +359,6 @@ void creat_trace_box(trackTable_strcut *dyn_track_list,
  * @param {  } std
  * @return {*}
  */
-
-
-
 void match_alg(trackTable_strcut *dyn_track_list,
                gridTrack_t *static_track_list,
                std::vector<orin_trace_info_t> &trace_info_list,
@@ -484,6 +469,7 @@ void match_alg(trackTable_strcut *dyn_track_list,
         {
             if (sub_pair.iou > 0.0) // 存在交叉
             {
+                // 运动航迹的分配逻辑（包含确认航迹与未确认航迹）
                 if((trace_info_list.at(trace_idx).track_type == ACTIVE_DYNAMIC_TRACK) ||
                    (trace_info_list.at(trace_idx).track_type == UNACTIVE_DYNAMIC_TRACK))
                 {
@@ -499,7 +485,6 @@ void match_alg(trackTable_strcut *dyn_track_list,
                         else
                         {
                             // 20230616: 增加速度判定 RADAR-Q74
-                            // trackTable_strcut &trace = dyn_track_list[trace_info_list.at(trace_idx).trace_idx];
                             if(fabs(sub_det_box.v_mean - trace.KalmanInfo.MeasPre(2)) < 4.0)
                             {
                                 //新增余弦残差
@@ -532,13 +517,14 @@ void match_alg(trackTable_strcut *dyn_track_list,
                         }
                         else
                         {
+                            // 计算聚类box中心点与航迹位置、形状的似然
                             double likelihood_pos = ComputeScaleOfEllipse(&trace, sub_det_box.x_pos, sub_det_box.y_pos);
 
                             if (((sub_det_box.valid & (1<<VALID)) && (likelihood_pos > 0.2)) ||
                                 ((sub_det_box.valid & (1<<HAS_MATCHED)) && (likelihood_pos > 0.6)))
                             {
+                                // 计算size比
                                 double box_ratio = sub_pair.trace_box_s / sub_pair.det_box_s;
-
                                 if(box_ratio > 0.2)
                                 {
                                     assinged_flag = true;
@@ -604,7 +590,7 @@ void match_alg(trackTable_strcut *dyn_track_list,
                                  (static_trace.status == ACTIVATE)) ||
                                 ((sub_det_box.valid & (1<<VALID))))
                             {
-                                // 比较速度差
+                                // 计算速度差
                                 double trace_v = (static_trace.kf_info.X_(0) * static_trace.kf_info.X_(2) +
                                                   static_trace.kf_info.X_(1) * static_trace.kf_info.X_(3)) /
                                                  (sqrt(pow(static_trace.kf_info.X_(0), 2.0) + pow(static_trace.kf_info.X_(1), 2.0)));
@@ -632,10 +618,9 @@ void match_alg(trackTable_strcut *dyn_track_list,
             }
             else
             {
-                // TODO
+                // TODO：IOU等于的情况
             }
         }
-
 
         // 若分配成功，则需更新该box相关属性
         if (assinged_flag == true)
@@ -723,13 +708,6 @@ void match_alg(trackTable_strcut *dyn_track_list,
         uint8_t trace_idx = sub_pair.trace_idx;
         det_box_t &sub_det_box = det_box_list_all.at(det_box_idx);
         bool assinged_flag = false;
-
-//        // 只对确认航迹进行补充关联
-//        if ((trace_info_list.at(trace_idx).track_type != ACTIVE_DYNAMIC_TRACK) ||
-//            (sub_det_box.matched_trace_idx == trace_idx))
-//        {
-//            continue;
-//        }
 
         // 只对确认航迹进行补充关联
         if ((trace_info_list.at(trace_idx).track_type > UNACTIVE_DYNAMIC_TRACK) || (sub_det_box.matched_trace_idx == trace_idx))
