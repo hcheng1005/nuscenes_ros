@@ -89,3 +89,7 @@ install(DIRECTORY include/${PROJECT_NAME}/ thirdparty/json/
         FILES_MATCHING
         PATTERN "*.h"
         PATTERN ".svn" EXCLUDE)
+
+
+add_executable(rec_ src/nusbag_rec.cpp)
+target_link_libraries(rec_ ${catkin_LIBRARIES})

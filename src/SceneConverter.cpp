@@ -181,8 +181,14 @@ SceneConverter::convertSampleDatas(rosbag::Bag& outBag,
 
     } else if (sampleType == SampleType::RADAR) {
       auto topicName = sensorName;
-      auto msg = readRadarFile(sampleFilePath);
-      writeMsg(topicName, sensorName, sampleData.timeStamp, outBag, msg);
+
+      // 转录毫米波雷达原始信息
+      auto msg1 = readRadarFile(sampleFilePath);
+      writeMsg(topicName, sensorName, sampleData.timeStamp, outBag, msg1);
+
+      // 转录成PCL点云信息便于可视化
+      auto msg2 = readRadarFile2PCLXYZ(sampleFilePath);
+      writeMsg((topicName+"_pc"), sensorName, sampleData.timeStamp, outBag, msg2);
 
     } else {
       cout << "Unknown sample type" << endl;
