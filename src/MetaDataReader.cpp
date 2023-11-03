@@ -196,6 +196,34 @@ MetaDataReader::loadImuData(const fs::path& filePath)
   return imuDatas;
 }
 
+std::vector<VehicleData>
+MetaDataReader::loadVehicleData(const fs::path& filePath)
+{
+  std::cout << "Loading Vehicle data from json file" << std::endl;
+  auto vehicleDataJsons = slurpJsonFile(filePath);
+  std::vector<VehicleData> vehicleDatas;
+
+  std::cout << "Unerializing Vehicle data" << std::endl;
+
+  for (const auto& vehicleDataJson : vehicleDataJsons) {
+    auto accel = vehicleDataJson["accel"];
+    auto orientation = vehicleDataJson["orientation"];
+    auto pos = vehicleDataJson["pos"];
+    auto rotation_rate = vehicleDataJson["rotation_rate"];
+    auto vel = vehicleDataJson["vel"];
+    vehicleDatas.push_back(VehicleData{
+        { accel[0], accel[1], accel[2] },
+        { orientation[0], orientation[1], orientation[2], orientation[3]},
+        { pos[0], pos[1], pos[2] },
+        { rotation_rate[0], rotation_rate[1], rotation_rate[2] },
+        { vel[0], vel[1], vel[2] },
+        vehicleDataJson["utime"]
+    });
+  }
+
+  return vehicleDatas;
+}
+
 EgoPoseInfo
 egoPoseJson2EgoPoseInfo(const json::json& egoPoseJson)
 {
@@ -337,6 +365,13 @@ std::vector<ImuData>
 MetaDataReader::getImuData(const fs::path& inPath) const
 {
   return loadImuData(inPath);
+}
+
+
+std::vector<VehicleData>
+MetaDataReader::getVehicleData(const fs::path& inPath) const
+{
+  return loadVehicleData(inPath);
 }
 
 std::vector<EgoPoseInfo>

@@ -51,6 +51,15 @@ struct ImuData {
     TimeStamp utime;
 };
 
+struct VehicleData {
+    double accel[3];
+    double orientation[4];
+    double pos[3];
+    double rotation_rate[3];
+    double vel[3];
+    TimeStamp utime;
+};
+
 struct CalibratedSensorName {
     Token token;
     std::string name;
