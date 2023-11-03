@@ -23,3 +23,5 @@ src/lidar/CUDA-CenterPoint/src/data/test/n008-2018-08-01-15-16-36-0400__LIDAR_TO
 src/lidar/CUDA-CenterPoint/src/data/test/n008-2018-08-01-15-16-36-0400__LIDAR_TOP__1533151612897588.pcd.bin
 src/lidar/CUDA-CenterPoint/devel/*
 src/lidar/CUDA-CenterPoint/build/*
+src/radar/radar_tracker_demo/build/*
+src/radar/radar_tracker_demo/devel/*
