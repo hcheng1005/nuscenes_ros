@@ -41,11 +41,18 @@ include_directories(SYSTEM
 include_directories(include)
 include_directories(/home/zdhjs-05/myGitHubCode/nuscenes2bag-master/wk_spc/src/include/)
 
-set(SRCS
-    src/radarTracker.cpp
-    src/DBSCAN.cc)
+# set(SRCS
+#     src/radarTracker.cpp
+#     src/DBSCAN.cc)
 
-add_executable(${PROJECT_NAME} ${SRCS} src/main.cpp)
+file(GLOB_RECURSE SOURCE_FILES 
+  src/*.cc 
+  src/*.cpp
+  src/tracker/*.cc
+  src/tracker/commonlib/*.cc
+)
+
+add_executable(${PROJECT_NAME} ${SOURCE_FILES} src/main.cpp)
 
 target_compile_options(${PROJECT_NAME}
                        PRIVATE

@@ -1,9 +1,10 @@
-#include "../include/radarTracker.h"
 #include <iostream>
+
+#include "../include/radarTracker.h"
+#include "../include/randomMatrix.h"
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/opencv.hpp>
-#include "../include/randomMatrix.h"
 
 using namespace RadarDemo;
 
@@ -22,7 +23,7 @@ cv::Mat image;
  */
 std::vector<radar_cluster_t> point_cluster(std::vector<radar_point_t> &new_meas)
 {
-    std::vector<std::vector<size_t>> clusterSet;
+    std::vector<std::vector<uint16_t>> clusterSet;
     DBSCAN::Point4DBSCAN Point;
     std::vector<DBSCAN::Point4DBSCAN> PointSet;
 
@@ -158,7 +159,6 @@ void trace_predict()
     std::cout << " Do [trace_predict] start ... " << std::endl;
     for (auto it = TraceList.begin(); it != TraceList.end(); it++)
     {
-
         (*it).Predict_();
     }
     std::cout << " Do [trace_predict] finish !!! " << std::endl;
@@ -284,10 +284,6 @@ void trace_birth(std::vector<radar_point_t> &new_meas)
  */
 int radar_track_main(std::vector<radar_point_t> &new_meas)
 {
-    // Step 1:
-    std::vector<radar_cluster_t> cluster;
-    cluster = point_cluster(new_meas);
-
     // Step 2: Trace Predict
     trace_predict();
 

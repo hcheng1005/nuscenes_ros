@@ -54,9 +54,12 @@ namespace RandomMatrice
          */
         void Predict_(void)
         {
-            Predict_State();
-            Predict_ExState();
+            // 状态预测
+            Predict_State(); 
 
+            // RMM预测
+            Predict_ExState(); 
+            
             age++;
             matched = false;
         }

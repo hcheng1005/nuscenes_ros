@@ -21,7 +21,7 @@ namespace RadarDemo
 
     typedef struct
     {
-        std::vector<size_t> pc_idx;
+        std::vector<uint16_t> pc_idx;
         T center[2]; //
         T len;
         T wid;
