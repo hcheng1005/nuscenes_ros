@@ -3,8 +3,8 @@
  * @version:
  * @Author: ChengHao
  * @Date: 2022-10-08 14:05:34
- * @LastEditors: ChengHao hao.cheng@wuzheng.com
- * @LastEditTime: 2023-07-06 20:39:46
+ * @LastEditors: CharlesCH hcheng1005@gmail.com
+ * @LastEditTime: 2023-11-05 11:26:04
  */
 
 #include "track_static_trace.h"
@@ -16,7 +16,7 @@
 #ifdef ARS548_RADAR
 #define FIFO_DEPTH (3)
 #else
-#define FIFO_DEPTH (5)
+#define FIFO_DEPTH (1)
 #endif
 
 std::deque<static_point_snapshot_t> snapshot_fifo;

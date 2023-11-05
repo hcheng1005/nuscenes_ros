@@ -191,7 +191,7 @@ void calculateBoxCorners(Point3D center, double length, double width, double hei
 }
 
 /**
- * @names: 
+ * @names:
  * @description: Briefly describe the function of your function
  * @return {*}
  */
