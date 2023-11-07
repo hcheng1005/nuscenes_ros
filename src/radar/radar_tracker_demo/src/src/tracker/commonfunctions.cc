@@ -5,6 +5,8 @@
 #include <string.h>
 #include <algorithm>
 #include <fstream> 
+
+#include "../../include/common/iou.h"
 /**
  * @name:
  * @description:
@@ -624,7 +626,6 @@ double IOU_With_Rot(const rect_point_struct & r1, const rect_point_struct & r2)
     return (o >= 0) ? o : 0;
 }
 
-
 /**
  * @names:
  * @description: Briefly describe the function of your function
@@ -633,7 +634,7 @@ double IOU_With_Rot(const rect_point_struct & r1, const rect_point_struct & r2)
  * @return {*}
  */
 double intersection_area(const rect_point_struct & r1, const rect_point_struct & r2){
-    MyPoint p1[10],p2[10];
+    myPoint p1[10],p2[10];
 
     p1[0].x=r1.x2;
     p1[0].y=r1.y2;
@@ -656,99 +657,6 @@ double intersection_area(const rect_point_struct & r1, const rect_point_struct &
     return area;
 }
 
-
-/**
- * @names:
- * @description: Briefly describe the function of your function
- * @param {MyPoint} a
- * @param {MyPoint} b
- * @param {int} na
- * @param {int} nb
- * @return {*}
- */
-double SPIA(MyPoint a[], MyPoint b[], int na, int nb)///SimplePolygonIntersectArea 调用此函数
-{
-    int i, j;
-    MyPoint t1[4], t2[4];
-    double res = 0, num1, num2;
-    a[na] = t1[0] = a[0], b[nb] = t2[0] = b[0];
-
-    for(i = 2; i < na; i++)
-    {
-        t1[1] = a[i-1], t1[2] = a[i];
-        num1 = dcmp(cross(t1[1], t1[2],t1[0]));
-        if(num1 < 0) std::swap(t1[1], t1[2]);
-
-        for(j = 2; j < nb; j++)
-        {
-
-            t2[1] = b[j - 1], t2[2] = b[j];
-            num2 = dcmp(cross(t2[1], t2[2],t2[0]));
-            if(num2 < 0) std::swap(t2[1], t2[2]);
-            res += CPIA(t1, t2, 3, 3) * num1 * num2;
-        }
-    }
-    return res;
-}
-
-/**
- * @names:
- * @description: Briefly describe the function of your function
- * @param {double} x
- * @return {*}
- */
-int dcmp(double x)
-{
-    if(x > eps) return 1;
-    return x < -eps ? -1 : 0;
-}
-
-/**
- * @names:
- * @description: Briefly describe the function of your function
- * @param {MyPoint} a
- * @param {MyPoint} b
- * @param {MyPoint} c
- * @return {*}
- */
-double cross(MyPoint a,MyPoint b,MyPoint c) ///叉积
-{
-    return (a.x-c.x)*(b.y-c.y)-(b.x-c.x)*(a.y-c.y);
-}
-
-/**
- * @names:
- * @description: Briefly describe the function of your function
- * @param {MyPoint} a
- * @param {MyPoint} b
- * @param {int} na
- * @param {int} nb
- * @return {*}
- */
-double CPIA(MyPoint a[], MyPoint b[], int na, int nb)
-{
-    MyPoint p[20], tmp[20];
-    int tn, sflag, eflag;
-    a[na] = a[0], b[nb] = b[0];
-    memcpy(p,b,sizeof(MyPoint)*(nb + 1));
-    for(int i = 0; i < na && nb > 2; i++)
-    {
-        sflag = dcmp(cross(a[i + 1], p[0],a[i]));
-        for(int j = tn = 0; j < nb; j++, sflag = eflag)
-        {
-            if(sflag>=0) tmp[tn++] = p[j];
-            eflag = dcmp(cross(a[i + 1], p[j + 1],a[i]));
-            if((sflag ^ eflag) == -2)
-                tmp[tn++] = intersection(a[i], a[i + 1], p[j], p[j + 1]); ///求交点
-        }
-        memcpy(p, tmp, sizeof(MyPoint) * tn);
-        nb = tn, p[nb] = p[0];
-    }
-    if(nb < 3) return 0.0;
-    return PolygonArea(p, nb);
-}
-
-
 /**
  * @names:
  * @description: Briefly describe the function of your function
@@ -767,46 +675,3 @@ double calcularea(const rect_point_struct & r){
     float s2=sqrt(p2*(p2-d32)*(p2-d34)*(p2-d24));
     return s1+s2;
 }
-
-/**
- * @names:
- * @description: Briefly describe the function of your function
- * @param {MyPoint} a
- * @param {MyPoint} b
- * @param {MyPoint} c
- * @param {MyPoint} d
- * @return {*}
- */
-MyPoint intersection(MyPoint a,MyPoint b,MyPoint c,MyPoint d)
-{
-    MyPoint p = a;
-    double t =((a.x-c.x)*(c.y-d.y)-(a.y-c.y)*(c.x-d.x))/((a.x-b.x)*(c.y-d.y)-(a.y-b.y)*(c.x-d.x));
-    p.x +=(b.x-a.x)*t;
-    p.y +=(b.y-a.y)*t;
-    return p;
-}
-
-//计算多边形面积
-/**
- * @names:
- * @description: Briefly describe the function of your function
- * @param {MyPoint} p
- * @param {int} n
- * @return {*}
- */
-double PolygonArea(MyPoint p[], int n)
-{
-    if(n < 3) return 0.0;
-    double s = p[0].y * (p[n - 1].x - p[1].x);
-    p[n] = p[0];
-    for(int i = 1; i < n; ++ i)
-        s += p[i].y * (p[i - 1].x - p[i + 1].x);
-    return fabs(s * 0.5);
-}
-
-
-//void cout_debug_info()
-//{
-
-
-//}

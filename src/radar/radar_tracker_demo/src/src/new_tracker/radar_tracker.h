@@ -3,8 +3,8 @@
  * @version:
  * @Author: ChengHao
  * @Date: 2022-10-12 08:58:47
- * @LastEditors: CharlesCH hcheng1005@gmail.com
- * @LastEditTime: 2023-11-06 20:28:00
+ * @LastEditors: ChengHao hao.cheng@wuzheng.com
+ * @LastEditTime: 2023-11-07 18:56:05
  */
 #pragma once
 
@@ -16,7 +16,7 @@ using Eigen::MatrixXf;
 using Eigen::VectorXf;
 
 #define SSIZE 6
-#define MSIZE 2
+#define MSIZE 3
 
 #define iDistLat 0
 #define iDistLong 1
@@ -25,25 +25,35 @@ using Eigen::VectorXf;
 #define iAccLat 4
 #define iAccLong 5
 
+
+typedef enum {
+  TRK_Invalid = 0,
+  TRK_Detected,
+  TRK_Confirmed,
+  TRK_Delete
+} trace_status_enum;
+
 // 用于航迹管理（起始、消亡）
 struct trace_manager_t
 {
-    int age;
-    int id;
-    int match_count = 0;
-    int unmatched_count = 0;
+    uint age;
+    uint id;
+    uint match_count = 0;
+    uint unmatched_count = 0;
+
+    trace_status_enum status;
 
     float prob;
 };
 
-typedef struct trace_shape_t
+struct trace_shape_t
 {
     float len;
     float wid;
     float theta;
 };
 
-typedef struct trace_kalman_t
+struct trace_kalman_t
 {
     VectorXf X = VectorXf(SSIZE);
     MatrixXf P = MatrixXf(SSIZE, SSIZE);
@@ -56,7 +66,7 @@ typedef struct trace_kalman_t
     MatrixXf H = MatrixXf(MSIZE, SSIZE);
 };
 
-typedef struct trace_status_t
+struct trace_status_t
 {
     trace_kalman_t trace_kalman;
     trace_manager_t trace_manager;
@@ -66,7 +76,7 @@ typedef struct trace_status_t
 class RadarTracker
 {
 public:
-    RadarTracker(int new_id, float center_lat, float center_long, float len, float wid, float theta);
+    RadarTracker(uint new_id, float center_lat, float center_long, float vr, float len, float wid, float theta);
     ~RadarTracker() {}
 
     void trace_predict();
@@ -134,10 +144,40 @@ private:
         trace_status.trace_kalman.H = trace_status.trace_kalman.H.setIdentity();
     }
 
-    void trace_update_kinematic(const VectorXf &Z);
+    void computeJacMat(void)
+    {
+        double x = trace_status.trace_kalman.X[iDistLat];
+        double y = trace_status.trace_kalman.X[iDistLong];
+        double vx = trace_status.trace_kalman.X[iVrelLat];
+        double vy = trace_status.trace_kalman.X[iVrelLong];
 
-    void trace_update_physical(float new_len, float new_wid, float new_theta);
+        double range_;
+        range_ = sqrtf(x * x + y * y);
 
-private:
+        // // 计算雅可比矩阵（RAV）
+        // trace_status.trace_kalman.H << x / range_, y / range_, 0, 0, 0, 0,
+        //                                 y / (range_ * range_), -x / (range_ * range_), 0, 0, 0, 0,
+        //                                 y * (vx * y - vy * x) / (range_ * range_ * range_),
+        //                                 x * (vy * x - vx * y) / (range_ * range_ * range_), x / range_, y / range_,
+        //                                 0, 0;
+
+        // 计算雅可比矩阵（XYV）
+        trace_status.trace_kalman.H << 1.0, 0, 0, 0, 0, 0,
+                                        0, 1.0, 0, 0, 0, 0,
+                                        vx / range_ - x * (vx * x + vy * y) / pow(range_, 3.0),
+                                        vy / range_ - y * (vx * x + vy * y) / pow(range_, 3.0), x / range_, y / range_,
+                                        0, 0;
+    }
+    
+
+
+public:
     trace_status_t trace_status;
+
+public:
+    void update_kinematic(const VectorXf &Z);
+
+    void update_physical(float new_len, float new_wid, float new_theta);
+
+    void manager(bool matchedFlag);
 };

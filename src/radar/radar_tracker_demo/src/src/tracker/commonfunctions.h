@@ -3,8 +3,8 @@
  * @version:
  * @Author: ChengHAO
  * @Date: 2022-08-26 11:53:56
- * @LastEditors: ChengHAO
- * @LastEditTime: 2022-09-15 13:47:09
+ * @LastEditors: ChengHao hao.cheng@wuzheng.com
+ * @LastEditTime: 2023-11-07 14:44:47
  */
 #ifndef COMMONFUNCTIONS_H
 #define COMMONFUNCTIONS_H
@@ -83,14 +83,6 @@ box_t box_fusion(const box_t &box_1, const box_t &box_2);
 double IOU_With_Rot(const rect_point_struct &r1, const rect_point_struct &r2);
 void creat_rect_box_point(double x_pos, double y_pos, double len, double wid, double ori,
                           rect_point_struct &r1);
-double intersection_area(const rect_point_struct &r1, const rect_point_struct &r2);
-MyPoint intersection(MyPoint a,MyPoint b,MyPoint c,MyPoint d);
+double intersection_area(const rect_point_struct & r1, const rect_point_struct & r2);
 double calcularea(const rect_point_struct & r);
-double PolygonArea(MyPoint p[], int n);
-double cross(MyPoint a,MyPoint b,MyPoint c);
-int dcmp(double x);
-double SPIA(MyPoint a[], MyPoint b[], int na, int nb);///SimplePolygonIntersectArea 调用此函数
-double CPIA(MyPoint a[], MyPoint b[], int na, int nb);//ConvexPolygonIntersectArea
-bool cmpr(const rect_point_struct &a,const rect_point_struct &b);
-
 #endif

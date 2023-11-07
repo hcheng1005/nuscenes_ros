@@ -3,14 +3,14 @@
  * @version:
  * @Author: ChengHao
  * @Date: 2022-10-12 08:58:47
- * @LastEditors: ChengHao
- * @LastEditTime: 2022-10-12 09:52:53
+ * @LastEditors: ChengHao hao.cheng@wuzheng.com
+ * @LastEditTime: 2023-11-07 14:26:05
  */
 #ifndef TRACK_STATIC_TRACE_H
 #define TRACK_STATIC_TRACE_H
 
 #include "dataStruct.h"
-#include "commonlib/DBSCAN.h"
+#include "common/DBSCAN.h"
 #include "commonfunctions.h"
 
 

@@ -62,5 +62,4 @@ double IOU_3D(const rect_basic_struct &rect_1, const rect_basic_struct &rect_2);
 double GIOU_2D(const rect_basic_struct &rect_1, const rect_basic_struct &rect_2);
 double GIOU_3D(const rect_basic_struct &rect_1, const rect_basic_struct &rect_2);
 
-
 #endif

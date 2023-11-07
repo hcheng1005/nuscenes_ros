@@ -3,15 +3,25 @@
 #include "basic_type.h"
 #include "radar_tracker.h"
 #include "../../include/common/iou.h"
+#include "../../include/common/lshape.h"
 
-#include "DBSCAN.h"
+#include "common/DBSCAN.h"
 #include <vector>
 
 class RadarTrackAlgProcess
 {
+
+public:
+    RadarTrackAlgProcess(/* args */);
+    ~RadarTrackAlgProcess();
+
+    void trackProc(const float dt, std::vector<RadarType::radarPoint_t> &measSet);
+    
 private:
     void trackPredict(const float dt);
+
     void matchTraceWithMeas(std::vector<RadarType::radarPoint_t> &measSet);
+
     std::vector<RadarType::radarCluster_t> pointCluster(std::vector<RadarType::radarPoint_t> &measSet);
 
     void genTraceBoxes(std::vector<RadarTracker> &radarTraceList,
@@ -22,20 +32,26 @@ private:
                           std::vector<rect_basic_struct> &measBoxes,
                           std::vector<std::vector<float>> &costMatrix);
 
-public:
-    RadarTrackAlgProcess(/* args */);
-    ~RadarTrackAlgProcess();
+    void genMatchedBoxes(std::vector<RadarType::radarPoint_t> &measSet,
+                        std::vector<RadarType::radarCluster_t> &radarClusters,
+                        std::vector<std::vector<int>> &traceMatchedMeas,
+                        std::vector<std::vector<RadarType::radarPoint_t>> &traceMatchDets,
+                        std::vector<Rect_t> &traceMatchBoxes);
 
-    void trackProc(const float dt, std::vector<RadarType::radarPoint_t> &measSet);
+    void traceUpdate(std::vector<std::vector<int>> &traceMatchedMeas,
+                    std::vector<std::vector<RadarType::radarPoint_t>> &traceMatchDets,
+                    std::vector<Rect_t> &traceMatchBoxes);
+
+    void trackManager(void);
+
+    void traceBirth(std::vector<RadarType::radarCluster_t> &radarClusters,
+                    std::vector<int> &measMatchedResult);
 
 public:
     std::vector<RadarTracker> radarTraceTable;
+
+private:
+    std::vector<rect_basic_struct> traceBoxes, measBoxes;
+
 };
 
-RadarTrackAlgProcess::RadarTrackAlgProcess(/* args */)
-{
-}
-
-RadarTrackAlgProcess::~RadarTrackAlgProcess()
-{
-}

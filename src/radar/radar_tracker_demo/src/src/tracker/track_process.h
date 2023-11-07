@@ -3,8 +3,8 @@
  * @version:
  * @Author: ChengHao
  * @Date: 2022-10-12 08:58:47
- * @LastEditors: chenghao hao.cheng@wuzheng.com
- * @LastEditTime: 2023-08-23 14:51:47
+ * @LastEditors: ChengHao hao.cheng@wuzheng.com
+ * @LastEditTime: 2023-11-07 14:25:17
  */
 #ifndef TRACK_PROCESS_H
 #define TRACK_PROCESS_H
@@ -12,9 +12,8 @@
 #include <string>
 #include <vector>
 
-#include "commonlib/DBSCAN.h"
+#include "common/DBSCAN.h"
 #include "commonfunctions.h"
-#include "commonlib/DBSCAN.h"
 #include "dataStruct.h"
 #include "filter.h"
 #include "match.h"

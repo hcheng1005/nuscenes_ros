@@ -28,6 +28,7 @@ namespace RadarType
         T len;
         T wid;
         T theta;
+        T vr;
 
     } radarCluster_t; // 雷达量测聚类结果
 

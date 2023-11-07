@@ -26,6 +26,11 @@
 //
 #include "./tracker/track_process.h"
 
+#include "new_tracker/radar_track_process.h"
+
+// 定义雷达跟踪器
+RadarTrackAlgProcess RadarTracker;
+
 using namespace sensor_msgs;
 using namespace nuscenes2bag;
 
@@ -164,11 +169,11 @@ void calculateBoxCorners(Point3D center, double length, double width, double hei
     corners[i].y = center.y + x1 * sinYaw + y1 * cosYaw;
   }
 
-  // Print the corner points
-  for (int i = 0; i < 8; ++i)
-  {
-    std::cout << "Corner " << i + 1 << ": (" << corners[i].x << ", " << corners[i].y << ", " << corners[i].z << ")\n";
-  }
+  // // Print the corner points
+  // for (int i = 0; i < 8; ++i)
+  // {
+  //   std::cout << "Corner " << i + 1 << ": (" << corners[i].x << ", " << corners[i].y << ", " << corners[i].z << ")\n";
+  // }
 
   // double halfLength = length / 2;
   // double halfWidth = width / 2;
@@ -214,20 +219,71 @@ void pub_trace_box(void)
 
   visualization_msgs::MarkerArray marker_array;
 
-  for (uint8_t i = 0; i < MAXTRACKS; i++)
+  // for (uint8_t i = 0; i < MAXTRACKS; i++)
+  // {
+  //   const auto &trace = trackList[i];
+  //   if (trace.trackState == TRACK_STATE_FREE)
+  //   {
+  //     continue;
+  //   }
+
+  //   // 创建一个visualization_msgs/Marker消息
+  //   visualization_msgs::Marker marker;
+  //   marker.header.frame_id = "lidar_top";
+  //   marker.header.stamp = ros::Time::now();
+
+  //   marker.id = trace.trackID;
+  //   marker.type = visualization_msgs::Marker::LINE_STRIP;
+  //   marker.action = visualization_msgs::Marker::ADD;
+  //   marker.pose.orientation.w = 1.0;
+  //   marker.scale.x = 0.1; // 线条的宽度
+  //   marker.color.a = 1.0;
+  //   marker.color.r = 1.0; // 设置线条的颜色为红色
+
+  //   // 创建一系列点来定义线条的路径
+  //   std::vector<geometry_msgs::Point> points;
+
+  //   // 横向、纵向、高度
+  //   Point3D center{-trace.KalmanInfo.StateEst(iDistLat), trace.KalmanInfo.StateEst(iDistLong), 1.0};
+  //   std::vector<Point3D> corners;
+  //   corners.resize(8);
+  //   calculateBoxCorners(center, trace.ExtendInfo.Width, trace.ExtendInfo.Length, 1.8, trace.ExtendInfo.box_theta, corners);
+
+  //   for (uint corner_idx = 0; corner_idx < 12; corner_idx++)
+  //   {
+  //     geometry_msgs::Point p;
+  //     p.x = corners[cor_seq[corner_idx][0]].x;
+  //     p.y = corners[cor_seq[corner_idx][0]].y;
+  //     p.z = corners[cor_seq[corner_idx][0]].z;
+
+  //     points.push_back(p);
+  //     p.x = corners[cor_seq[corner_idx][1]].x;
+  //     p.y = corners[cor_seq[corner_idx][1]].y;
+  //     p.z = corners[cor_seq[corner_idx][1]].z;
+
+  //     points.push_back(p);
+  //   }
+
+  //   // 将点添加到marker中
+  //   marker.points = points;
+  //   marker.lifetime = ros::Duration(0.1);
+  //   marker_array.markers.push_back(marker);
+  // }
+
+  for (uint i = 0; i < RadarTracker.radarTraceTable.size(); i++)
   {
-    const auto &trace = trackList[i];
-    if (trace.trackState == TRACK_STATE_FREE)
-    {
-      continue;
-    }
+    const auto &trace = RadarTracker.radarTraceTable.at(i);
+    // if (trace.trackState == TRACK_STATE_FREE)
+    // {
+    //   continue;
+    // }
 
     // 创建一个visualization_msgs/Marker消息
     visualization_msgs::Marker marker;
     marker.header.frame_id = "lidar_top";
     marker.header.stamp = ros::Time::now();
 
-    marker.id = trace.trackID;
+    marker.id = trace.trace_status.trace_manager.id;
     marker.type = visualization_msgs::Marker::LINE_STRIP;
     marker.action = visualization_msgs::Marker::ADD;
     marker.pose.orientation.w = 1.0;
@@ -239,10 +295,13 @@ void pub_trace_box(void)
     std::vector<geometry_msgs::Point> points;
 
     // 横向、纵向、高度
-    Point3D center{-trace.KalmanInfo.StateEst(iDistLat), trace.KalmanInfo.StateEst(iDistLong), 1.0};
+    Point3D center{-trace.trace_status.trace_kalman.X(iDistLat), 
+                    trace.trace_status.trace_kalman.X(iDistLong), 1.0};
     std::vector<Point3D> corners;
     corners.resize(8);
-    calculateBoxCorners(center, trace.ExtendInfo.Width, trace.ExtendInfo.Length, 1.8, trace.ExtendInfo.box_theta, corners);
+    calculateBoxCorners(center, 
+                        trace.trace_status.trace_shape.wid, trace.trace_status.trace_shape.len, 1.8, 
+                        trace.trace_status.trace_shape.theta, corners);
 
     for (uint corner_idx = 0; corner_idx < 12; corner_idx++)
     {
@@ -280,7 +339,7 @@ void RadarCallback(const RadarObjects &radar_ptr)
             << "Rec new Msg: [Radar TOP] " << radar_ptr.header.frame_id
             << std::endl;
 
-  std::vector<RadarDemo::radar_point_t> radar_meas;
+  std::vector<RadarType::radarPoint_t> radar_meas;
 
   uint32_t idx = 0;
   for (const auto &radar_point : radar_ptr.objects)
@@ -289,7 +348,7 @@ void RadarCallback(const RadarObjects &radar_ptr)
         sqrt(pow(radar_point.pose.x, 2.0) + pow(radar_point.pose.y, 2.0));
     float azimuth_sc = atan2(radar_point.pose.x, radar_point.pose.y);
 
-    RadarDemo::radar_point_t pc{range_sc,
+    RadarType::radarPoint_t pc{range_sc,
                                 azimuth_sc,
                                 radar_point.vx,
                                 radar_point.rcs,
@@ -329,21 +388,23 @@ void RadarCallback(const RadarObjects &radar_ptr)
   ContiRadarOutput.Header.ActualRecNum = idx;
   ContiRadarOutput.Header.ShouldRecNum = idx;
 
+  RadarTracker.trackProc(0.075, radar_meas);
+
   // 执行雷达MOT
   // radar_track_main(radar_meas);
 
-  // 目标跟踪算法
-  track_process(trackList,
-                gridTrackList,
-                &ContiRadarOutput,
-                global_point,
-                vehi4radar,
-                &Tracker_,
-                0.075);
+  // // 目标跟踪算法
+  // track_process(trackList,
+  //               gridTrackList,
+  //               &ContiRadarOutput,
+  //               global_point,
+  //               vehi4radar,
+  //               &Tracker_,
+  //               0.075);
 
   // visualization_();
 
-  pub_trace_box();
+  // pub_trace_box();
 }
 
 /**

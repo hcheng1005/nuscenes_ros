@@ -1,12 +1,17 @@
 #include "match.h"
 #include <algorithm>
 
+#include <iostream>
+
 void matchAlgGreedy(std::vector<std::vector<float>> &costMatrix,
                     std::vector<std::vector<int>> &traceMatchedMeas,
                     std::vector<int> &measMatchedResult)
 {
-    traceMatchedMeas.resize(costMatrix.at(0).size());
-    measMatchedResult.resize(costMatrix.size());
+    if(traceMatchedMeas.empty() || measMatchedResult.empty())
+    {
+        std::cout << "something is empty " << std::endl;
+        return;
+    }
 
     std::vector<greedyData_t> newCostMatrix;
     int traceIdx = 0, measIdx = 0;
