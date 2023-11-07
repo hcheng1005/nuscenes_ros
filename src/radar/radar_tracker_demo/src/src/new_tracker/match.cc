@@ -7,7 +7,7 @@ void matchAlgGreedy(std::vector<std::vector<float>> &costMatrix,
                     std::vector<std::vector<int>> &traceMatchedMeas,
                     std::vector<int> &measMatchedResult)
 {
-    if(traceMatchedMeas.empty() || measMatchedResult.empty())
+    if (traceMatchedMeas.empty() || measMatchedResult.empty())
     {
         std::cout << "something is empty " << std::endl;
         return;
@@ -36,9 +36,9 @@ void matchAlgGreedy(std::vector<std::vector<float>> &costMatrix,
     // 执行greedy分配
     for (const auto &subCost : newCostMatrix)
     {
-        if (subCost.costVal > 0.01) // 最低分配门限
+        if (subCost.costVal > 0.1) // 最低分配门限
         {
-            if (measMatchedResult.at(subCost.measIdx) == 0)
+            if (measMatchedResult.at(subCost.measIdx) == 0) // 未被分配
             {
                 traceMatchedMeas.at(subCost.traceIdx).push_back(subCost.measIdx);
                 measMatchedResult.at(subCost.measIdx) = 1;

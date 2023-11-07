@@ -1,4 +1,5 @@
 ﻿#include "radar_tracker.h"
+#include <iostream>
 
 RadarTracker::RadarTracker(uint new_id, float center_lat, float center_long, float vr, float len, float wid, float theta)
 {
@@ -41,13 +42,20 @@ void RadarTracker::update_kinematic(const VectorXf &Z)
 
     VectorXf preX(3);
     double vr_ = (trace_status.trace_kalman.X(iDistLat) * trace_status.trace_kalman.X(iVrelLat) +
-                                    trace_status.trace_kalman.X(iDistLong) * trace_status.trace_kalman.X(iVrelLong)) /
-                                   (sqrt(pow(trace_status.trace_kalman.X(iDistLat), 2.0) + pow(trace_status.trace_kalman.X(iDistLong), 2.0)));
-    
+                  trace_status.trace_kalman.X(iDistLong) * trace_status.trace_kalman.X(iVrelLong)) /
+                 (sqrt(pow(trace_status.trace_kalman.X(iDistLat), 2.0) + pow(trace_status.trace_kalman.X(iDistLong), 2.0)));
+
     preX << trace_status.trace_kalman.X(iDistLat), trace_status.trace_kalman.X(iDistLong), vr_;
-    
+
+    // std::cout << "Z: " << Z.transpose() << std::endl;
+    // std::cout << "X: " << preX.transpose() << std::endl;
+    // std::cout << "X_old: " <<  trace_status.trace_kalman.X.transpose() << std::endl;
+
     trace_status.trace_kalman.X = trace_status.trace_kalman.X + K * (Z - preX);
     trace_status.trace_kalman.P = trace_status.trace_kalman.P - K * S * K.transpose();
+
+    // std::cout << "K * (Z - preX): " << (K * (Z - preX)).transpose() << std::endl;
+    // std::cout << "X_new: " <<  trace_status.trace_kalman.X.transpose() << std::endl;
 }
 
 void RadarTracker::update_physical(float new_len, float new_wid, float new_theta)
@@ -60,14 +68,14 @@ void RadarTracker::manager(bool matchedFlag)
 {
     trace_status.trace_manager.age++;
 
-    if(matchedFlag)
+    if (matchedFlag)
     {
         trace_status.trace_manager.match_count++;
         trace_status.trace_manager.unmatched_count = 0;
     }
     else
     {
-        if(trace_status.trace_manager.match_count)
+        if (trace_status.trace_manager.match_count)
         {
             trace_status.trace_manager.match_count--;
         }
@@ -75,21 +83,30 @@ void RadarTracker::manager(bool matchedFlag)
         trace_status.trace_manager.unmatched_count++;
     }
 
-    if(trace_status.trace_manager.status == TRK_Detected)
+    // std::cout << "Trace ID: [" << trace_status.trace_manager.id << "]"
+    //           << trace_status.trace_manager.age << std::endl;
+
+    // std::cout << "match_count: [" << trace_status.trace_manager.match_count << "]"
+    //           << ", "
+    //           << "unmatched_count: [" << trace_status.trace_manager.unmatched_count << "]"
+    //           << ", "
+    //           << std::endl;
+
+    if (trace_status.trace_manager.status == TRK_Detected)
     {
-        if(trace_status.trace_manager.match_count > 3)
+        if (trace_status.trace_manager.match_count > 3)
         {
             trace_status.trace_manager.status = TRK_Confirmed;
         }
 
-        if(trace_status.trace_manager.unmatched_count >= 2)
+        if (trace_status.trace_manager.unmatched_count >= 2)
         {
             trace_status.trace_manager.status = TRK_Delete; // need delete it
         }
     }
     else
     {
-        if(trace_status.trace_manager.unmatched_count >= 5)
+        if (trace_status.trace_manager.unmatched_count >= 5)
         {
             trace_status.trace_manager.status = TRK_Delete; // need delete it
         }

@@ -164,7 +164,7 @@ void calc_rect_contour(Rect_t &rect) {
   rect.corner[4][1] = 0.5 * (rect.corner[0][1] + rect.corner[2][1]);
 
   rect.center_lat = rect.corner[4][0];
-  rect.center_long = rect.corner[4][0];
+  rect.center_long = rect.corner[4][1];
 
   double temp_wid = sqrt(pow((rect.corner[0][0] - rect.corner[1][0]), 2.0) +
                          pow((rect.corner[0][1] - rect.corner[1][1]), 2.0));

@@ -8,6 +8,7 @@ typedef struct Rect_struct {
   double corner[5][2];  // 第一个点是最低点，然后逆时针旋转
   double center_lat, center_long;
   double length, width, theta;  // theta ∈ [-90, +90];
+  double vr; // 毫米波
 } Rect_t;
 
 

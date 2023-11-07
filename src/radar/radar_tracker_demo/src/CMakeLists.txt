@@ -39,8 +39,8 @@ include_directories(SYSTEM
                     ${OpenCV_INCLUDE_DIRS})
 
 include_directories(include)
-include_directories(/home/zdhjs-05/myGitHubCode/nuscenes2bag-master/wk_spc/src/include/)
-# include_directories(/home/charles/myCode/nus_ros/src/nuscenes_ros/include/)
+# include_directories(/home/zdhjs-05/myGitHubCode/nuscenes2bag-master/wk_spc/src/include/)
+include_directories(/home/charles/myCode/nus_ros/src/nuscenes_ros/include/)
 
 
 # set(SRCS

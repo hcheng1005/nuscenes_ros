@@ -3,8 +3,8 @@
  * @version:
  * @Author: ChengHao
  * @Date: 2022-10-12 08:58:47
- * @LastEditors: ChengHao hao.cheng@wuzheng.com
- * @LastEditTime: 2023-11-07 18:56:05
+ * @LastEditors: CharlesCH hcheng1005@gmail.com
+ * @LastEditTime: 2023-11-07 22:20:52
  */
 #pragma once
 
@@ -113,7 +113,9 @@ private:
      */
     void Set_R(void)
     {
-        trace_status.trace_kalman.R << std::pow(0.5, 2.0), 0.0, 0.0, std::pow(0.5, 2.0);
+        trace_status.trace_kalman.R << std::pow(0.2, 2.0), 0.0, 0.0,
+                                        0.0, std::pow(0.2, 2.0), 0.0,
+                                        0.0, 0.0, std::pow(0.2, 2.0);
     }
 
     /**
@@ -151,8 +153,7 @@ private:
         double vx = trace_status.trace_kalman.X[iVrelLat];
         double vy = trace_status.trace_kalman.X[iVrelLong];
 
-        double range_;
-        range_ = sqrtf(x * x + y * y);
+        double range_ = sqrtf(x * x + y * y);
 
         // // 计算雅可比矩阵（RAV）
         // trace_status.trace_kalman.H << x / range_, y / range_, 0, 0, 0, 0,

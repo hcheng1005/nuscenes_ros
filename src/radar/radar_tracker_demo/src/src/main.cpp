@@ -273,10 +273,6 @@ void pub_trace_box(void)
   for (uint i = 0; i < RadarTracker.radarTraceTable.size(); i++)
   {
     const auto &trace = RadarTracker.radarTraceTable.at(i);
-    // if (trace.trackState == TRACK_STATE_FREE)
-    // {
-    //   continue;
-    // }
 
     // 创建一个visualization_msgs/Marker消息
     visualization_msgs::Marker marker;
@@ -287,20 +283,34 @@ void pub_trace_box(void)
     marker.type = visualization_msgs::Marker::LINE_STRIP;
     marker.action = visualization_msgs::Marker::ADD;
     marker.pose.orientation.w = 1.0;
-    marker.scale.x = 0.1; // 线条的宽度
-    marker.color.a = 1.0;
-    marker.color.r = 1.0; // 设置线条的颜色为红色
+
+    if (trace.trace_status.trace_manager.status == TRK_Confirmed)
+    {
+      marker.scale.x = 0.1; // 线条的宽度
+      marker.color.a = 1.0;
+      marker.color.r = 1.0; // 设置线条的颜色
+      marker.color.g = 0.0; // 
+      marker.color.b = 0.0; // 
+    }
+    else
+    {
+      marker.scale.x = 0.1; // 线条的宽度
+      marker.color.a = 1.0;
+      marker.color.r = 1.0; // 设置线条的颜色为红色
+      marker.color.g = 1.0; 
+      marker.color.b = 1.0; 
+    }
 
     // 创建一系列点来定义线条的路径
     std::vector<geometry_msgs::Point> points;
 
     // 横向、纵向、高度
-    Point3D center{-trace.trace_status.trace_kalman.X(iDistLat), 
-                    trace.trace_status.trace_kalman.X(iDistLong), 1.0};
+    Point3D center{-trace.trace_status.trace_kalman.X(iDistLat),
+                   trace.trace_status.trace_kalman.X(iDistLong), 1.0};
     std::vector<Point3D> corners;
     corners.resize(8);
-    calculateBoxCorners(center, 
-                        trace.trace_status.trace_shape.wid, trace.trace_status.trace_shape.len, 1.8, 
+    calculateBoxCorners(center,
+                        trace.trace_status.trace_shape.wid, trace.trace_status.trace_shape.len, 1.8,
                         trace.trace_status.trace_shape.theta, corners);
 
     for (uint corner_idx = 0; corner_idx < 12; corner_idx++)
@@ -349,15 +359,15 @@ void RadarCallback(const RadarObjects &radar_ptr)
     float azimuth_sc = atan2(radar_point.pose.x, radar_point.pose.y);
 
     RadarType::radarPoint_t pc{range_sc,
-                                azimuth_sc,
-                                radar_point.vx,
-                                radar_point.rcs,
-                                radar_point.vx_comp,
-                                radar_point.pose.x,
-                                radar_point.pose.y,
-                                0.0,
-                                0.0,
-                                true};
+                               azimuth_sc,
+                               radar_point.vx,
+                               radar_point.rcs,
+                               radar_point.vx_comp,
+                               radar_point.pose.x,
+                               radar_point.pose.y,
+                               0.0,
+                               0.0,
+                               true};
     radar_meas.push_back(pc);
 
     ContiRadarOutput.RadarMeasure[idx].ID = idx;
@@ -404,7 +414,7 @@ void RadarCallback(const RadarObjects &radar_ptr)
 
   // visualization_();
 
-  // pub_trace_box();
+  pub_trace_box();
 }
 
 /**

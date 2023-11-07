@@ -16,7 +16,7 @@ public:
     ~RadarTrackAlgProcess();
 
     void trackProc(const float dt, std::vector<RadarType::radarPoint_t> &measSet);
-    
+
 private:
     void trackPredict(const float dt);
 
@@ -33,25 +33,20 @@ private:
                           std::vector<std::vector<float>> &costMatrix);
 
     void genMatchedBoxes(std::vector<RadarType::radarPoint_t> &measSet,
-                        std::vector<RadarType::radarCluster_t> &radarClusters,
-                        std::vector<std::vector<int>> &traceMatchedMeas,
-                        std::vector<std::vector<RadarType::radarPoint_t>> &traceMatchDets,
-                        std::vector<Rect_t> &traceMatchBoxes);
-
-    void traceUpdate(std::vector<std::vector<int>> &traceMatchedMeas,
-                    std::vector<std::vector<RadarType::radarPoint_t>> &traceMatchDets,
-                    std::vector<Rect_t> &traceMatchBoxes);
+                         std::vector<RadarType::radarCluster_t> &radarClusters,
+                         std::vector<std::vector<int>> &traceMatchedMeas);
 
     void trackManager(void);
 
     void traceBirth(std::vector<RadarType::radarCluster_t> &radarClusters,
                     std::vector<int> &measMatchedResult);
 
+    void genFinlalMatchedBox(std::vector<RadarType::radarPoint_t> &RadarDets,
+                             Rect_t &matchedBox);
+
 public:
     std::vector<RadarTracker> radarTraceTable;
 
 private:
     std::vector<rect_basic_struct> traceBoxes, measBoxes;
-
 };
-
