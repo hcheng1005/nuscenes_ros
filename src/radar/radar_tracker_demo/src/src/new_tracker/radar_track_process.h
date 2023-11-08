@@ -23,7 +23,7 @@ class RadarTrackAlgProcess {
   std::vector<RadarType::radarCluster_t> pointCluster(
       std::vector<RadarType::radarPoint_t> &measSet);
 
-  void genTraceBoxes(std::vector<RadarTracker> &radarTraceList,
+  void genTraceBoxes(std::vector<RadarTracker *> &radarTraceList,
                      std::vector<rect_basic_struct> &traceBoxes);
   void genMeasClusterBoxes(
       std::vector<RadarType::radarCluster_t> &radarClusters,
@@ -54,7 +54,7 @@ class RadarTrackAlgProcess {
                            Rect_t &matchedBox);
 
  public:
-  std::vector<RadarTracker> radarTraceTable;
+  std::vector<RadarTracker *> radarTraceTable;
 
  private:
   std::vector<rect_basic_struct> traceBoxes, measBoxes;

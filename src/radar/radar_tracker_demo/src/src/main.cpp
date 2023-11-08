@@ -75,7 +75,7 @@ void visualization_(void) {
 
   // 航迹可视化
   for (uint8_t i = 0; i < MAXTRACKS; i++) {
-    const auto& trace = trackList[i];
+    const auto &trace = trackList[i];
     if (trace.trackState == TRACK_STATE_FREE) {
       continue;
     }
@@ -126,7 +126,7 @@ struct Point3D {
 
 void calculateBoxCorners(Point3D center, double length, double width,
                          double height, double yaw,
-                         std::vector<Point3D>& corners) {
+                         std::vector<Point3D> &corners) {
   // Calculate half dimensions
   double halfLength = length / 2;
   double halfWidth = width / 2;
@@ -205,7 +205,7 @@ void pub_trace_box(void) {
 
 #ifdef APOLLO_RADAR_ALG
   for (uint8_t i = 0; i < MAXTRACKS; i++) {
-    const auto& trace = trackList[i];
+    const auto &trace = trackList[i];
     if (trace.trackState == TRACK_STATE_FREE) {
       continue;
     }
@@ -256,19 +256,19 @@ void pub_trace_box(void) {
 #endif
 
   for (uint i = 0; i < RadarTracker.radarTraceTable.size(); i++) {
-    const auto& trace = RadarTracker.radarTraceTable.at(i);
+    const auto &trace = RadarTracker.radarTraceTable.at(i);
 
     // 创建一个visualization_msgs/Marker消息
     visualization_msgs::Marker marker;
     marker.header.frame_id = "lidar_top";
     marker.header.stamp = ros::Time::now();
 
-    marker.id = trace.trace_manager.id;
+    marker.id = trace->trace_manager.id;
     marker.type = visualization_msgs::Marker::LINE_STRIP;
     marker.action = visualization_msgs::Marker::ADD;
     marker.pose.orientation.w = 1.0;
 
-    if (trace.trace_manager.status == TRK_Confirmed) {
+    if (trace->trace_manager.status == TRK_Confirmed) {
       marker.scale.x = 0.1;  // 线条的宽度
       marker.color.a = 1.0;
       marker.color.r = 1.0;  // 设置线条的颜色
@@ -286,12 +286,12 @@ void pub_trace_box(void) {
     std::vector<geometry_msgs::Point> points;
 
     // 横向、纵向、高度
-    Point3D center{-trace.trace_kalman.X(iDistLat),
-                   trace.trace_kalman.X(iDistLong), 1.0};
+    Point3D center{-trace->trace_kalman.X(iDistLat),
+                   trace->trace_kalman.X(iDistLong), 1.0};
     std::vector<Point3D> corners;
     corners.resize(8);
-    calculateBoxCorners(center, trace.trace_shape.wid, trace.trace_shape.len,
-                        1.8, trace.trace_shape.theta, corners);
+    calculateBoxCorners(center, trace->trace_shape.wid, trace->trace_shape.len,
+                        1.8, trace->trace_shape.theta, corners);
 
     for (uint corner_idx = 0; corner_idx < 12; corner_idx++) {
       geometry_msgs::Point p;
@@ -322,7 +322,7 @@ void pub_trace_box(void) {
  * @param {RadarObjects&} radar_ptr
  * @return {*}
  */
-void RadarCallback(const RadarObjects& radar_ptr) {
+void RadarCallback(const RadarObjects &radar_ptr) {
   std::cout << radar_ptr.header.stamp << ": "
             << "Rec new Msg: [Radar TOP] " << radar_ptr.header.frame_id
             << std::endl;
@@ -330,7 +330,7 @@ void RadarCallback(const RadarObjects& radar_ptr) {
   std::vector<RadarType::radarPoint_t> radar_meas;
 
   uint32_t idx = 0;
-  for (const auto& radar_point : radar_ptr.objects) {
+  for (const auto &radar_point : radar_ptr.objects) {
     float range_sc =
         sqrt(pow(radar_point.pose.x, 2.0) + pow(radar_point.pose.y, 2.0));
     float azimuth_sc = atan2(radar_point.pose.x, radar_point.pose.y);
@@ -401,7 +401,7 @@ void RadarCallback(const RadarObjects& radar_ptr) {
  * @param {Odometry&} pose_ptr
  * @return {*}
  */
-void PoseCallback(const nav_msgs::Odometry& pose_ptr) {
+void PoseCallback(const nav_msgs::Odometry &pose_ptr) {
   vehicleInfo_struct vehicleInfo;
   vehicleInfo.vx = pose_ptr.twist.twist.linear.x;
   vehicleInfo.yaw_rate = pose_ptr.twist.twist.angular.z;
@@ -416,7 +416,7 @@ void PoseCallback(const nav_msgs::Odometry& pose_ptr) {
  * @param {char*} argv
  * @return {*}
  */
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   ros::init(argc, argv, "nuscenes");
   ros::NodeHandle radar_back_left_node, radar_back_right_node, radar_front_node,
       radar_front_left_node, radar_front_right_node;

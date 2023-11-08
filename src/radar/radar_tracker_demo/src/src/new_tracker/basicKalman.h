@@ -5,31 +5,23 @@
 #include <eigen3/Eigen/Dense>
 #include <iostream>
 
-template <class T>
+template <typename T, uint x_dim, uint z_dim>
 class basicKalmanFilter {
  public:
-  basicKalmanFilter(const uint x_dim, const uint z_dim) {
-    X_dim = x_dim;
-    Z_dim = z_dim;
-
-    X.resize(X_dim, 1);
-    P.resize(X_dim, X_dim);
-
-    Q.resize(X_dim, X_dim);
-    F.resize(X_dim, X_dim);
-
-    H.resize(Z_dim, X_dim);
-    R.resize(Z_dim, Z_dim);
+  basicKalmanFilter() {
+    // std::cout << "build a new basicKalmanFilter" << std::endl;
   }
 
-  ~basicKalmanFilter() {}
+  virtual ~basicKalmanFilter() {
+    // std::cout << "delete basicKalmanFilter" << std::endl;
+  }
 
   virtual void kalmanPredict(void) {
     X = F * X;
-    P = F * X * F.transpose() + Q;
+    P = F * P * F.transpose() + Q;
   }
 
-  virtual void kalmanUpdate(Eigen::Matrix<T, Eigen::Dynamic, 1> newZ) {
+  virtual void kalmanUpdate(Eigen::Matrix<T, z_dim, 1> newZ) {
     auto S = H * P * H.transpose() + R;
     auto K = P * H.transpose() * S.inverse();
     auto z = H * X;
@@ -37,13 +29,23 @@ class basicKalmanFilter {
     P = P - K * H * P;
   }
 
- private:
-  uint X_dim;
-  uint Z_dim;
-  Eigen::Matrix<T, Eigen::Dynamic, 1> X;
-  Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> P;
-  Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> Q;
-  Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> F;
-  Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> H;
-  Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> R;
+  virtual void Set_F(){};
+  virtual void Set_Q(){};
+  virtual void Set_H(void) { H = H.setIdentity(); }
+  virtual void Set_R(){};
+
+  virtual Eigen::Matrix<T, x_dim, 1> GetX() { return X; };
+
+  virtual Eigen::Matrix<T, z_dim, z_dim> GetS() {
+    Eigen::Matrix<T, z_dim, z_dim> S = H * P * H.transpose() + R;
+    return S;
+  };
+
+ public:
+  Eigen::Matrix<T, x_dim, 1> X;
+  Eigen::Matrix<T, x_dim, x_dim> P;
+  Eigen::Matrix<T, x_dim, x_dim> Q;
+  Eigen::Matrix<T, x_dim, x_dim> F;
+  Eigen::Matrix<T, z_dim, x_dim> H;
+  Eigen::Matrix<T, z_dim, z_dim> R;
 };

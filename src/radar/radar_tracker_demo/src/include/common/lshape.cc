@@ -13,15 +13,17 @@ using namespace std;
  * @param {vector<double>} vecNums
  * @return {*}
  */
-std::pair<double, double> compute_variance(std::vector<double> vecNums) {
+std::pair<double, double> compute_variance(std::vector<double> vecNums)
+{
   std::pair<double, double> res;
   double sumNum = std::accumulate(vecNums.begin(), vecNums.end(), 0.0);
-  double mean = sumNum / vecNums.size();  // 均值
+  double mean = sumNum / vecNums.size(); // 均值
   double accum = 0.0;
   for_each(vecNums.begin(), vecNums.end(),
-           [&](const double d) { accum += (d - mean) * (d - mean); });
-  double variance = accum / vecNums.size();  // 方差
-  double stdev = sqrt(variance);             // 标准差
+           [&](const double d)
+           { accum += (d - mean) * (d - mean); });
+  double variance = accum / vecNums.size(); // 方差
+  double stdev = sqrt(variance);            // 标准差
 
   res.first = variance;
   res.second = stdev;
@@ -36,7 +38,8 @@ std::pair<double, double> compute_variance(std::vector<double> vecNums) {
  * @param {VectorXd} c2
  * @return {*}
  */
-double area_criterion(Eigen::VectorXd c1, Eigen::VectorXd c2) {
+double area_criterion(Eigen::VectorXd c1, Eigen::VectorXd c2)
+{
   double c1_max = c1.maxCoeff();
   double c1_min = c1.minCoeff();
 
@@ -53,7 +56,8 @@ double area_criterion(Eigen::VectorXd c1, Eigen::VectorXd c2) {
  * @param {VectorXd} c2
  * @return {*}
  */
-double closeness_criterion(Eigen::VectorXd c1, Eigen::VectorXd c2) {
+double closeness_criterion(Eigen::VectorXd c1, Eigen::VectorXd c2)
+{
 #define MIN_VALUE (0.01)
   double c1_max = c1.maxCoeff();
   double c1_min = c1.minCoeff();
@@ -63,22 +67,30 @@ double closeness_criterion(Eigen::VectorXd c1, Eigen::VectorXd c2) {
 
   std::vector<double> d1, d2;
 
-  for (uint16_t idx = 0; idx < c1.rows(); idx++) {
-    if ((c1_max - c1[idx]) < (c1[idx] - c1_min)) {
+  for (uint16_t idx = 0; idx < c1.rows(); idx++)
+  {
+    if ((c1_max - c1[idx]) < (c1[idx] - c1_min))
+    {
       d1.push_back(c1_max - c1[idx]);
-    } else {
+    }
+    else
+    {
       d1.push_back(c1[idx] - c1_min);
     }
 
-    if ((c2_max - c2[idx]) < (c2[idx] - c2_min)) {
+    if ((c2_max - c2[idx]) < (c2[idx] - c2_min))
+    {
       d2.push_back(c2_max - c2[idx]);
-    } else {
+    }
+    else
+    {
       d2.push_back(c2[idx] - c2_min);
     }
   }
 
   double bate = 0.0;
-  for (uint8_t idx = 0; idx < d1.size(); idx++) {
+  for (uint8_t idx = 0; idx < d1.size(); idx++)
+  {
     double d = std::max(std::min(d1.at(idx), d2.at(idx)), MIN_VALUE);
     bate += (1.0 / d);
   }
@@ -93,7 +105,8 @@ double closeness_criterion(Eigen::VectorXd c1, Eigen::VectorXd c2) {
  * @param {VectorXd} c2
  * @return {*}
  */
-double variance_criterion(Eigen::VectorXd c1, Eigen::VectorXd c2) {
+double variance_criterion(Eigen::VectorXd c1, Eigen::VectorXd c2)
+{
 #define MIN_VALUE (0.01)
 
   double c1_max = c1.maxCoeff();
@@ -104,25 +117,36 @@ double variance_criterion(Eigen::VectorXd c1, Eigen::VectorXd c2) {
 
   std::vector<double> d1, d2;
 
-  for (uint32_t idx = 0; idx < c1.rows(); idx++) {
-    if ((c1_max - c1[idx]) < (c1[idx] - c1_min)) {
+  for (uint32_t idx = 0; idx < c1.rows(); idx++)
+  {
+    if ((c1_max - c1[idx]) < (c1[idx] - c1_min))
+    {
       d1.push_back(c1_max - c1[idx]);
-    } else {
+    }
+    else
+    {
       d1.push_back(c1[idx] - c1_min);
     }
 
-    if ((c2_max - c2[idx]) < (c2[idx] - c2_min)) {
+    if ((c2_max - c2[idx]) < (c2[idx] - c2_min))
+    {
       d2.push_back(c2_max - c2[idx]);
-    } else {
+    }
+    else
+    {
       d2.push_back(c2[idx] - c2_min);
     }
   }
 
   std::vector<double> E1, E2;
-  for (uint32_t idx = 0; idx < d1.size(); idx++) {
-    if (d1.at(idx) < d2.at(idx)) {
+  for (uint32_t idx = 0; idx < d1.size(); idx++)
+  {
+    if (d1.at(idx) < d2.at(idx))
+    {
       E1.push_back(d1.at(idx));
-    } else {
+    }
+    else
+    {
       E2.push_back(d2.at(idx));
     }
   }
@@ -130,11 +154,13 @@ double variance_criterion(Eigen::VectorXd c1, Eigen::VectorXd c2) {
   std::pair<double, double> V1 = std::make_pair(0.0, 0.0);
   std::pair<double, double> V2 = std::make_pair(0.0, 0.0);
 
-  if (E1.size() > 0) {
+  if (E1.size() > 0)
+  {
     V1 = compute_variance(E1);
   }
 
-  if (E2.size() > 0) {
+  if (E2.size() > 0)
+  {
     V2 = compute_variance(E2);
   }
 
@@ -143,7 +169,8 @@ double variance_criterion(Eigen::VectorXd c1, Eigen::VectorXd c2) {
 
 // 两直线交点求解
 void calc_cross_point(const double *a, const double *b, const double *c,
-                      double *x, double *y) {
+                      double *x, double *y)
+{
   *x = (b[0] * -c[1] - b[1] * -c[0]) / (a[0] * b[1] - a[1] * b[0]);
   *y = (a[1] * -c[0] - a[0] * -c[1]) / (a[0] * b[1] - a[1] * b[0]);
 }
@@ -154,8 +181,10 @@ void calc_cross_point(const double *a, const double *b, const double *c,
  * @param {Rect_t} &rect
  * @return {*}
  */
-void calc_rect_contour(Rect_t &rect) {
-  for (uint8_t idx = 0; idx < 4; idx++) {
+void calc_rect_contour(Rect_t &rect)
+{
+  for (uint8_t idx = 0; idx < 4; idx++)
+  {
     calc_cross_point(&rect.a[idx], &rect.b[idx], &rect.c[idx],
                      &rect.corner[idx][0], &rect.corner[idx][1]);
   }
@@ -172,18 +201,22 @@ void calc_rect_contour(Rect_t &rect) {
   double temp_len = sqrt(pow((rect.corner[1][0] - rect.corner[2][0]), 2.0) +
                          pow((rect.corner[1][1] - rect.corner[2][1]), 2.0));
 
-  if (temp_len > temp_wid) {
+  if (temp_len > temp_wid)
+  {
     rect.length = temp_len;
     rect.width = temp_wid;
     rect.theta *= -1.0;
-  } else {
+  }
+  else
+  {
     rect.length = temp_wid;
     rect.width = temp_len;
     rect.theta = (rect.theta >= 0.0) ? (M_PI_2 - rect.theta) : (-M_PI_2 - rect.theta);
   }
 }
 
-Rect_t gen_rectInfo(const Eigen::MatrixXd point, const double final_theta) {
+Rect_t gen_rectInfo(const Eigen::MatrixXd point, const double final_theta)
+{
   // best angle
   double sin_s = sin(final_theta);
   double cos_s = cos(final_theta);
@@ -234,10 +267,11 @@ Rect_t gen_rectInfo(const Eigen::MatrixXd point, const double final_theta) {
  * @param {MatrixXd} point
  * @return {*}
  */
-Rect_t L_shape_Fit_Proc(const Eigen::MatrixXd point, 
-                        const double theta_, 
+Rect_t L_shape_Fit_Proc(const Eigen::MatrixXd point,
+                        const double theta_,
                         const double theta_area,
-                        const double step) {
+                        const double step)
+{
 #define ANGLE_STEP (1.0 / 180.0 * M_PI)
 
   Eigen::MatrixXd p2;
@@ -246,10 +280,11 @@ Rect_t L_shape_Fit_Proc(const Eigen::MatrixXd point,
   double min_distance = -1e2;
   double final_theta = 0.0;
 
-  double theta_start = theta_ - theta_area; 
-  double theta_end = theta_ + theta_area ; 
- 
-  while (theta_start <= theta_end) {
+  double theta_start = theta_ - theta_area;
+  double theta_end = theta_ + theta_area;
+
+  while (theta_start <= theta_end)
+  {
     // double temp_angle = step * ANGLE_STEP;
     rotate_mat << cos(theta_start), sin(theta_start), -1.0 * sin(theta_start),
         cos(theta_start);
@@ -263,12 +298,13 @@ Rect_t L_shape_Fit_Proc(const Eigen::MatrixXd point,
     // double d = area_criterion(c1, c2);
     // double d = closeness_criterion(c1, c2);
     double d = variance_criterion(c1, c2);
-    if (min_distance < d) {
+    if (min_distance < d)
+    {
       min_distance = d;
       final_theta = theta_start;
     }
 
-    theta_start += step;  // each step is 2°
+    theta_start += step; // each step is 2°
   }
 
   // std::cout << "min_distance : " << min_distance << std::endl;

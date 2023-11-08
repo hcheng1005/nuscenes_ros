@@ -1,12 +1,13 @@
+#include "radar_track_process.h"
+
 #include "../../include/common/lshape.h"
 #include "match.h"
-#include "radar_track_process.h"
 
 // OPENCV
 #include <opencv2/core/core.hpp>
 #include <opencv2/opencv.hpp>
 
-#define VISUALIZATION (true)
+// #define VISUALIZATION (true)
 #ifdef VISUALIZATION
 cv::Mat image;
 #endif
@@ -23,7 +24,7 @@ RadarTrackAlgProcess::~RadarTrackAlgProcess() {}
  * @return {*}
  */
 void RadarTrackAlgProcess::trackProc(
-    const float dt, std::vector<RadarType::radarPoint_t>& measSet) {
+    const float dt, std::vector<RadarType::radarPoint_t> &measSet) {
   std::cout << " ---------------- trackProc START ---------------- "
             << std::endl;
   trackPredict(dt);
@@ -42,8 +43,8 @@ void RadarTrackAlgProcess::trackProc(
  * @return {*}
  */
 void RadarTrackAlgProcess::trackPredict(const float dt) {
-  for (auto& sub_trace : radarTraceTable) {
-    sub_trace.trace_predict();  // 航迹状态预测
+  for (auto &sub_trace : radarTraceTable) {
+    sub_trace->trace_predict();  // 航迹状态预测
   }
 }
 
@@ -54,14 +55,11 @@ void RadarTrackAlgProcess::trackPredict(const float dt) {
  * @return {*}
  */
 void RadarTrackAlgProcess::matchTraceWithMeas(
-    std::vector<RadarType::radarPoint_t>& measSet) {
+    std::vector<RadarType::radarPoint_t> &measSet) {
   std::vector<std::vector<float>> costMatrix;
-
-  // 航迹关联的所有点云
-  std::vector<std::vector<RadarType::radarPoint_t>> traceMatchDets;
-
-  // 航迹关联的点云构成的bounding box
-  std::vector<Rect_t> traceMatchBoxes;
+  std::vector<std::vector<RadarType::radarPoint_t>>
+      traceMatchDets;                   // 航迹关联的所有点云
+  std::vector<Rect_t> traceMatchBoxes;  // 航迹关联的点云构成的bounding box
 
   // 先将measSet聚类成boxes
   auto radarClusters = pointCluster(measSet);
@@ -71,10 +69,8 @@ void RadarTrackAlgProcess::matchTraceWithMeas(
   genMeasClusterBoxes(radarClusters, this->measBoxes);
 
   // 计算代价矩阵
-  // genCostMatrixIOU(traceBoxes, measBoxes, costMatrix);
-  genCostMatrixMahalanobis(radarClusters, costMatrix);
+  genCostMatrixIOU(traceBoxes, measBoxes, costMatrix);
 
-  // 定义分配结果存储变量
   std::vector<int> measMatchedResult(measBoxes.size(), 0);
   std::vector<std::vector<int>> traceMatchedMeas(traceBoxes.size());
 
@@ -96,12 +92,12 @@ void RadarTrackAlgProcess::matchTraceWithMeas(
  * @return {*}
  */
 void RadarTrackAlgProcess::genMatchedBoxes(
-    std::vector<RadarType::radarPoint_t>& measSet,
-    std::vector<RadarType::radarCluster_t>& radarClusters,
-    std::vector<std::vector<int>>& traceMatchedMeas) {
-  RadarTracker* subTrace = nullptr;
+    std::vector<RadarType::radarPoint_t> &measSet,
+    std::vector<RadarType::radarCluster_t> &radarClusters,
+    std::vector<std::vector<int>> &traceMatchedMeas) {
+  RadarTracker *subTrace = nullptr;
   uint traceIdx = 0;
-  for (const auto& sunMatchClusters : traceMatchedMeas) {
+  for (const auto &sunMatchClusters : traceMatchedMeas) {
     if (!sunMatchClusters.empty())  // 该航迹未匹配到量测
     {
       std::vector<RadarType::radarPoint_t> subRadarDets;
@@ -109,9 +105,9 @@ void RadarTrackAlgProcess::genMatchedBoxes(
       // std::cout << "Matched CLuster Num: " << sunMatchClusters.size() <<
       // std::endl;
 
-      for (const auto& subClusterIdx : sunMatchClusters) {
-        auto& Cluster = radarClusters.at(subClusterIdx);
-        for (const auto& radarPointIdx : Cluster.pc_idx) {
+      for (const auto &subClusterIdx : sunMatchClusters) {
+        auto &Cluster = radarClusters.at(subClusterIdx);
+        for (const auto &radarPointIdx : Cluster.pc_idx) {
           subRadarDets.push_back(measSet.at(radarPointIdx));
         }
       }
@@ -120,7 +116,7 @@ void RadarTrackAlgProcess::genMatchedBoxes(
       genFinlalMatchedBox(subRadarDets, matchedBox);
 
       // 航迹状态更新
-      subTrace = &radarTraceTable.at(traceIdx);
+      subTrace = radarTraceTable.at(traceIdx);
       Eigen::VectorXf Z(3);
       Z << matchedBox.center_lat, matchedBox.center_long, matchedBox.vr;
 
@@ -129,7 +125,7 @@ void RadarTrackAlgProcess::genMatchedBoxes(
                                 0.0);  // TODO DONT CARE THETA??
       subTrace->manager(true);
     } else {
-      subTrace = &radarTraceTable.at(traceIdx);
+      subTrace = radarTraceTable.at(traceIdx);
       subTrace->manager(false);
     }
 
@@ -144,14 +140,14 @@ void RadarTrackAlgProcess::genMatchedBoxes(
  * @return {*}
  */
 void RadarTrackAlgProcess::genFinlalMatchedBox(
-    std::vector<RadarType::radarPoint_t>& RadarDets, Rect_t& matchedBox) {
+    std::vector<RadarType::radarPoint_t> &RadarDets, Rect_t &matchedBox) {
   // box fitting
   Eigen::MatrixXd point = Eigen::MatrixXd(RadarDets.size(), 3);
 
   // std::cout << "..................................." << std::endl;
 
   uint idx = 0;
-  for (const auto& subDet : RadarDets) {
+  for (const auto &subDet : RadarDets) {
     point(idx, 0) = subDet.x_cc;
     point(idx, 1) = subDet.y_cc;
     point(idx, 2) = subDet.vr;
@@ -185,7 +181,7 @@ void RadarTrackAlgProcess::genFinlalMatchedBox(
  * @return {*}
  */
 std::vector<RadarType::radarCluster_t> RadarTrackAlgProcess::pointCluster(
-    std::vector<RadarType::radarPoint_t>& measSet) {
+    std::vector<RadarType::radarPoint_t> &measSet) {
   DBSCAN::Point4DBSCAN Point;
   std::vector<std::vector<uint16_t>> clusterSet;
   std::vector<DBSCAN::Point4DBSCAN> PointSet;
@@ -197,13 +193,7 @@ std::vector<RadarType::radarCluster_t> RadarTrackAlgProcess::pointCluster(
   /* 设置点云DBSCAN参数 */
   std::vector<cv::Point2f> point_cloud_orin;
   for (uint16_t n = 0; n < measSet.size(); n++) {
-    auto& sub_meas = measSet.at(n);
-
-    // 剔除点云
-    if ((sub_meas.x_cc < 0.0) || (fabs(sub_meas.vr_compensated) < 1.0) ||
-        (sub_meas.valid == false)) {
-      continue;
-    }
+    auto &sub_meas = measSet.at(n);
 
     // 添加点到点云数据
 #ifdef VISUALIZATION
@@ -212,6 +202,12 @@ std::vector<RadarType::radarCluster_t> RadarTrackAlgProcess::pointCluster(
                            600 - sub_meas.x_cc / 100 * 600),
                3, cv::Scalar(200, 200, 200), -1);
 #endif
+
+    // if ((sub_meas.x_cc < 0.0) || (fabs(sub_meas.vr_compensated) < 1.0) ||
+    // (sub_meas.valid == false))
+    // {
+    //     continue;
+    // }
 
     Point.PointInfo.ID = n;
 
@@ -232,15 +228,18 @@ std::vector<RadarType::radarCluster_t> RadarTrackAlgProcess::pointCluster(
 
     PointSet.push_back(Point);
   }
+  // std::cout << "DO KNN_DBSCAN " << std::endl;
 
   // Step 1: cluster
   DBSCAN::KNN_DBSCAN(PointSet, clusterSet);
 
+  // std::cout << "Cluster Result:[ " << clusterSet.size() << " ]" <<
+  // std::endl;///////
 #ifdef VISUALIZATION
   int idx = 0;
-  for (auto& sub_cluster : clusterSet) {
+  for (auto &sub_cluster : clusterSet) {
     std::vector<cv::Point2f> point_cloud;
-    for (auto& pc : sub_cluster) {
+    for (auto &pc : sub_cluster) {
       // 添加点到点云数据
       point_cloud.push_back(
           cv::Point2f((PointSet.at(pc).PointInfo.DistLat + 100) / 200 * 800,
@@ -248,7 +247,7 @@ std::vector<RadarType::radarCluster_t> RadarTrackAlgProcess::pointCluster(
     }
 
     // 显示图像
-    for (const cv::Point2f& point : point_cloud) {
+    for (const cv::Point2f &point : point_cloud) {
       cv::circle(image, point, 2, cv::Scalar(0, idx * 20, 50 + idx * 20), -1);
     }
 
@@ -258,7 +257,7 @@ std::vector<RadarType::radarCluster_t> RadarTrackAlgProcess::pointCluster(
 
   // Step 2: box fitting
   std::vector<RadarType::radarCluster_t> radar_cluters;
-  for (auto& sub_cluster : clusterSet) {
+  for (auto &sub_cluster : clusterSet) {
     // std::cout << "sub_cluster --------------------" << std::endl;
 
     RadarType::radarCluster_t radar_cluster;
@@ -267,7 +266,7 @@ std::vector<RadarType::radarCluster_t> RadarTrackAlgProcess::pointCluster(
     std::vector<float> len_vec, wid_vec, vr_vec;
 
     uint16_t realIdx = 0;
-    for (const auto& pc : radar_cluster.pc_idx) {
+    for (const auto &pc : radar_cluster.pc_idx) {
       len_vec.push_back(PointSet.at(pc).PointInfo.DistLong);
       wid_vec.push_back(PointSet.at(pc).PointInfo.DistLat);
       vr_vec.push_back(PointSet.at(pc).PointInfo.V);
@@ -321,16 +320,16 @@ std::vector<RadarType::radarCluster_t> RadarTrackAlgProcess::pointCluster(
  * @return {*}
  */
 void RadarTrackAlgProcess::genTraceBoxes(
-    std::vector<RadarTracker>& radarTraceList,
-    std::vector<rect_basic_struct>& traceBoxes) {
+    std::vector<RadarTracker *> &radarTraceList,
+    std::vector<rect_basic_struct> &traceBoxes) {
   traceBoxes.clear();
-  for (const auto& subTrace : radarTraceList) {
-    rect_basic_struct subBox{{subTrace.trace_kalman.X(iDistLong),
-                              subTrace.trace_kalman.X(iDistLat), 0.0},
-                             subTrace.trace_shape.len,
-                             subTrace.trace_shape.wid,
+  for (const auto &subTrace : radarTraceList) {
+    rect_basic_struct subBox{{subTrace->trace_kalman.X(iDistLong),
+                              subTrace->trace_kalman.X(iDistLat), 0.0},
+                             subTrace->trace_shape.len,
+                             subTrace->trace_shape.wid,
                              0.0,
-                             subTrace.trace_shape.theta,
+                             subTrace->trace_shape.theta,
                              0.0};
     traceBoxes.push_back(subBox);
   }
@@ -342,10 +341,10 @@ void RadarTrackAlgProcess::genTraceBoxes(
  * @return {*}
  */
 void RadarTrackAlgProcess::genMeasClusterBoxes(
-    std::vector<RadarType::radarCluster_t>& radarClusters,
-    std::vector<rect_basic_struct>& measBoxes) {
+    std::vector<RadarType::radarCluster_t> &radarClusters,
+    std::vector<rect_basic_struct> &measBoxes) {
   measBoxes.clear();
-  for (const auto& subCluster : radarClusters) {
+  for (const auto &subCluster : radarClusters) {
     rect_basic_struct subBox{{subCluster.center[1], subCluster.center[0], 0.0},
                              subCluster.len,
                              subCluster.wid,
@@ -362,74 +361,28 @@ void RadarTrackAlgProcess::genMeasClusterBoxes(
  * @return {*}
  */
 void RadarTrackAlgProcess::genCostMatrixIOU(
-    std::vector<rect_basic_struct>& traceBoxes,
-    std::vector<rect_basic_struct>& measBoxes,
-    std::vector<std::vector<float>>& costMatrix) {
+    std::vector<rect_basic_struct> &traceBoxes,
+    std::vector<rect_basic_struct> &measBoxes,
+    std::vector<std::vector<float>> &costMatrix) {
   costMatrix.clear();
 
-  for (const auto& measBox : measBoxes) {
+  for (const auto &measBox : measBoxes) {
     std::vector<float> subCostMatrix;
-    for (const auto& traceBox : traceBoxes) {
-      // 使用IOU作为距离衡量指标
-      float distance = static_cast<float>(IOU_2D(measBox, traceBox));
 
-      subCostMatrix.push_back(distance);
-    }
+    // std::cout << "measBox info: " << measBox.center_pos[0] << ", " <<
+    // measBox.center_pos[1] << ", "
+    //           << measBox.box_len << ", " << measBox.box_wid << std::endl;
 
-    costMatrix.push_back(subCostMatrix);
-  }
-}
+    for (const auto &traceBox : traceBoxes) {
+      // std::cout << "traceBox info: " << traceBox.center_pos[0] << ", " <<
+      // traceBox.center_pos[1] << ", "
+      //           << traceBox.box_len << ", " << traceBox.box_wid << std::endl;
 
-/**
- * @names:
- * @description: Briefly describe the function of your function
- * @return {*}
- */
-void RadarTrackAlgProcess::genCostMatrixEuclidean(
-    std::vector<rect_basic_struct>& traceBoxes,
-    std::vector<rect_basic_struct>& measBoxes,
-    std::vector<std::vector<float>>& costMatrix) {
-  costMatrix.clear();
+      float IOU_ = static_cast<float>(IOU_2D(measBox, traceBox));
 
-  for (const auto& measBox : measBoxes) {
-    std::vector<float> subCostMatrix;
-    for (const auto& traceBox : traceBoxes) {
-      // 使用欧式距离作为距离横向指标
-      float distance =
-          -1.0 *
-          sqrt(pow((measBox.center_pos[0] - traceBox.center_pos[0]), 2.0) +
-               pow((measBox.center_pos[1] - traceBox.center_pos[1]), 2.0));
+      // std::cout << "IOU_ " << IOU_ << std::endl;
 
-      subCostMatrix.push_back(distance);
-    }
-
-    costMatrix.push_back(subCostMatrix);
-  }
-}
-
-/**
- * @names:
- * @description: Briefly describe the function of your function
- * @return {*}
- */
-void RadarTrackAlgProcess::genCostMatrixMahalanobis(
-    std::vector<RadarType::radarCluster_t>& radarClusters,
-    std::vector<std::vector<float>>& costMatrix) {
-  for (const auto& subCluster : radarClusters) {
-    std::vector<float> subCostMatrix;
-    Eigen::VectorXf newZ(3);
-    newZ << subCluster.center[0], subCluster.center[1], subCluster.vr;
-    for (auto& subTrace : radarTraceTable) {
-      Eigen::MatrixXf S = subTrace.getS();
-      Eigen::VectorXf ZPre = subTrace.getZPre();
-
-      float distance =
-          sqrt((newZ - ZPre).transpose() * S.inverse() * (newZ - ZPre));
-
-      std::cout << "diff: " << (newZ - ZPre).transpose()
-                << " maha: " << distance << std::endl;
-
-      subCostMatrix.push_back(distance);
+      subCostMatrix.push_back(IOU_);
     }
 
     costMatrix.push_back(subCostMatrix);
@@ -442,20 +395,21 @@ void RadarTrackAlgProcess::genCostMatrixMahalanobis(
  * @return {*}
  */
 void RadarTrackAlgProcess::trackManager(void) {
-  std::vector<RadarTracker>::iterator itor;
-  std::vector<RadarTracker> radarTraceTableNew;
+  std::vector<RadarTracker *> radarTraceTableNew;
 
-  for (auto& subTrace : radarTraceTable) {
-    if (subTrace.trace_manager.status != TRK_Delete) {
+  for (auto &subTrace : radarTraceTable) {
+    if (subTrace->trace_manager.status != TRK_Delete) {
       // std::cout << "delete it" << std::endl;
       radarTraceTableNew.push_back(subTrace);
+    } else {
+      delete subTrace;
     }
   }
 
+  radarTraceTable.swap(radarTraceTableNew);
+
   std::cout << "Final Trace Numer:[ " << radarTraceTable.size() << " ]"
             << std::endl;
-
-  radarTraceTable = radarTraceTableNew;
 }
 
 /**
@@ -464,19 +418,20 @@ void RadarTrackAlgProcess::trackManager(void) {
  * @return {*}
  */
 void RadarTrackAlgProcess::traceBirth(
-    std::vector<RadarType::radarCluster_t>& radarClusters,
-    std::vector<int>& measMatchedResult) {
+    std::vector<RadarType::radarCluster_t> &radarClusters,
+    std::vector<int> &measMatchedResult) {
   static uint globalID = 0;
   int clusterIdx = 0;
-  for (const auto& subMeas : measMatchedResult) {
+  for (const auto &subMeas : measMatchedResult) {
     if (subMeas == 0)  // to create a new trace
     {
-      RadarTracker newTrace(
+      auto newTracezzz = new RadarTracker(
           globalID, radarClusters.at(clusterIdx).center[0],
           radarClusters.at(clusterIdx).center[1],
           radarClusters.at(clusterIdx).vr, radarClusters.at(clusterIdx).len,
           radarClusters.at(clusterIdx).wid, radarClusters.at(clusterIdx).theta);
-      radarTraceTable.push_back(newTrace);
+
+      radarTraceTable.push_back(newTracezzz);
 
       globalID++;
     }

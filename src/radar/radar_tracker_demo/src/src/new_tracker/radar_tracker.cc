@@ -1,6 +1,6 @@
-﻿#include <iostream>
+﻿#include "radar_tracker.h"
 
-#include "radar_tracker.h"
+#include <iostream>
 
 RadarTracker::RadarTracker(uint new_id, float center_lat, float center_long,
                            float vr, float len, float wid, float theta) {
@@ -27,7 +27,8 @@ RadarTracker::RadarTracker(uint new_id, float center_lat, float center_long,
   Set_F();
   Set_H();
 
-  basicKalman = new basicKalmanFilter<float>(6, 2);
+  // basicKalman = new basicKalmanFilter<float>(6, 2);
+  randomMatriceFilter = new RandomMatriceFilter<float, 6, 3>();
 }
 
 /**
@@ -52,7 +53,7 @@ void RadarTracker::trace_predict() {
  * @param {VectorXf&} Z
  * @return {*}
  */
-void RadarTracker::update_kinematic(const VectorXf& Z) {
+void RadarTracker::update_kinematic(const VectorXf &Z) {
   MatrixXf S = trace_kalman.H * trace_kalman.P * trace_kalman.H.transpose() +
                trace_kalman.R;
   MatrixXf K = trace_kalman.P * trace_kalman.H.transpose() * S.inverse();
@@ -65,9 +66,9 @@ void RadarTracker::update_kinematic(const VectorXf& Z) {
 
   preX << trace_kalman.X(iDistLat), trace_kalman.X(iDistLong), vr_;
 
-  std::cout << "Z: " << Z.transpose() << std::endl;
-  std::cout << "X: " << preX.transpose() << std::endl;
-  std::cout << "X_old: " << trace_kalman.X.transpose() << std::endl;
+  // std::cout << "Z: " << Z.transpose() << std::endl;
+  // std::cout << "X: " << preX.transpose() << std::endl;
+  // std::cout << "X_old: " << trace_kalman.X.transpose() << std::endl;
 
   // std::cout << "H: \n" << trace_kalman.H << std::endl;
   // std::cout << "P: \n" << trace_kalman.P << std::endl;
@@ -77,8 +78,9 @@ void RadarTracker::update_kinematic(const VectorXf& Z) {
   trace_kalman.X = trace_kalman.X + K * (Z - preX);
   trace_kalman.P = trace_kalman.P - K * trace_kalman.H * trace_kalman.P;
 
-  std::cout << "K * (Z - preX): " << (K * (Z - preX)).transpose() << std::endl;
-  std::cout << "X_new: " << trace_kalman.X.transpose() << std::endl;
+  // std::cout << "K * (Z - preX): " << (K * (Z - preX)).transpose() <<
+  // std::endl; std::cout << "X_new: " << trace_kalman.X.transpose() <<
+  // std::endl;
 }
 
 /**

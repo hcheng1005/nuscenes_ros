@@ -3,8 +3,8 @@
  * @version:
  * @Author: ChengHao
  * @Date: 2022-10-12 08:58:47
- * @LastEditors: ChengHao hao.cheng@wuzheng.com
- * @LastEditTime: 2023-11-08 14:27:44
+ * @LastEditors: CharlesCH hcheng1005@gmail.com
+ * @LastEditTime: 2023-11-08 21:01:18
  */
 #pragma once
 
@@ -13,6 +13,7 @@
 #include <eigen3/Eigen/Dense>
 
 #include "basicKalman.h"
+#include "randomMatrice.h"
 
 using Eigen::MatrixXf;
 using Eigen::VectorXf;
@@ -69,7 +70,12 @@ class RadarTracker {
  public:
   RadarTracker(uint new_id, float center_lat, float center_long, float vr,
                float len, float wid, float theta);
-  ~RadarTracker() {}
+
+  ~RadarTracker() {
+    std::cout << "delete ID " << trace_manager.id << std::endl;
+    std::cout << "INFO " << trace_kalman.X.transpose() << std::endl;
+    delete randomMatriceFilter;
+  }
 
   void trace_predict();
 
@@ -169,7 +175,7 @@ class RadarTracker {
   trace_manager_t trace_manager;
   trace_shape_t trace_shape;
 
-  basicKalmanFilter<float> *basicKalman;
+  RandomMatriceFilter<float, 6, 3> *randomMatriceFilter = nullptr;
 
  public:
   void update_kinematic(const VectorXf &Z);

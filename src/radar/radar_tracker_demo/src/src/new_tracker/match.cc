@@ -1,7 +1,7 @@
+#include "match.h"
+
 #include <algorithm>
 #include <iostream>
-
-#include "match.h"
 
 void matchAlgGreedy(std::vector<std::vector<float>> &costMatrix,
                     std::vector<std::vector<int>> &traceMatchedMeas,
