@@ -7,11 +7,10 @@
  * @LastEditTime: 2023-11-07 14:27:10
  */
 
-#include "track_filter.h"
-
-#include "commonfunctions.h"
 #include "common/DBSCAN.h"
+#include "commonfunctions.h"
 #include "match.h"
+#include "track_filter.h"
 
 /**
  * @name: track_Predict
@@ -1230,7 +1229,9 @@ void UpdateSurvivalProb(trackTable_strcut *trace,
       }
     }
 
-    std::cout << "ProbOfExist of " << "Trace ID:[ " <<  trace->trackID << "] " << trace->ExtendInfo.ProbOfExist << std::endl;
+    std::cout << "ProbOfExist of "
+              << "Trace ID:[ " << trace->trackID << "] "
+              << trace->ExtendInfo.ProbOfExist << std::endl;
 
     trace->ExtendInfo.ProbOfExist =
         Valuelimit(0.01, TRACE_PROB_LIMIT, trace->ExtendInfo.ProbOfExist);

@@ -11,16 +11,14 @@
 
 #include "dataStruct.h"
 
-
 //#define USING_EKF_FILTER
 #define USING_UKF_FILTER
 
 #define _X_Y_V
 // #define _R_A_V_
 
-class Tracker
-{
-public:
+class Tracker {
+ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   int n_x_;
@@ -41,8 +39,10 @@ public:
 
   virtual ~Tracker();
 
-  void EKF_Predict(double delta_t, trackTable_strcut *trace, vehicleInfo_struct *vehicleInfo);
-  void UKF_Predict(double delta_t, trackTable_strcut *trace, vehicleInfo_struct *vehicleInfo);
+  void EKF_Predict(double delta_t, trackTable_strcut *trace,
+                   vehicleInfo_struct *vehicleInfo);
+  void UKF_Predict(double delta_t, trackTable_strcut *trace,
+                   vehicleInfo_struct *vehicleInfo);
 
   void CalcJacobian(trackTable_strcut *trace);
   void EKF_Compute_S_K(trackTable_strcut *trace);
@@ -50,7 +50,8 @@ public:
   void Prediction(double delta_t, trackTable_strcut *trace,
                   vehicleInfo_struct *vehicleInfo);
 
-  void UpdateState(trackTable_strcut *trace, std::vector<RadarMeasure_struct> &global_point);
+  void UpdateState(trackTable_strcut *trace,
+                   std::vector<RadarMeasure_struct> &global_point);
 
   MatrixXd compute_F(trackTable_strcut *trace, double dt);
 
@@ -62,12 +63,17 @@ public:
 
   void ComputeNewS_RMMandCorners(trackTable_strcut *trace);
 
-  Eigen::VectorXd compute_diif_by_center(trackTable_strcut *trace, const Eigen::MatrixXd meas_mat);
-  Eigen::VectorXd compute_diif_by_side(trackTable_strcut *trace, const Eigen::MatrixXd meas_mat);
-  Eigen::VectorXd compute_diif_by_closest(trackTable_strcut *trace, const MatrixXd meas_mat);
-  void adjust_diff(trackTable_strcut *trace, Eigen::VectorXd &ErrorX, Eigen::VectorXd &add_val);
+  Eigen::VectorXd compute_diif_by_center(trackTable_strcut *trace,
+                                         const Eigen::MatrixXd meas_mat);
+  Eigen::VectorXd compute_diif_by_side(trackTable_strcut *trace,
+                                       const Eigen::MatrixXd meas_mat);
+  Eigen::VectorXd compute_diif_by_closest(trackTable_strcut *trace,
+                                          const MatrixXd meas_mat);
+  void adjust_diff(trackTable_strcut *trace, Eigen::VectorXd &ErrorX,
+                   Eigen::VectorXd &add_val);
 
-  void adpative_QR_logic(trackTable_strcut *trace, const Eigen::VectorXd ErrorX);
+  void adpative_QR_logic(trackTable_strcut *trace,
+                         const Eigen::VectorXd ErrorX);
 };
 
 #endif

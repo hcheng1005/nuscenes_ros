@@ -3,11 +3,10 @@
 #include <cmath>
 #include <vector>
 
-typedef struct greedyData_t
-{
-    int traceIdx;
-    int measIdx;
-    float costVal;
+typedef struct greedyData_t {
+  int traceIdx;
+  int measIdx;
+  float costVal;
 };
 
 void matchAlgGreedy(std::vector<std::vector<float>> &costMatrix,

@@ -2,11 +2,11 @@
 #define DATASTRUCT_H
 
 #include <time.h>
+
 #include <algorithm>
 #include <fstream>
 #include <string>
 #include <vector>
-
 
 #include "inttypes.h"
 
@@ -28,19 +28,18 @@
 #include "ContiRadar.h"
 #endif
 
-
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
-#define TRACE_PROB_LIMIT        (5.0)
-#define TRACE_ACTIVE_SAMLL_TAR  (0.2)
-#define TRACE_ACTIVE_PERCENT    (0.4)
+#define TRACE_PROB_LIMIT (5.0)
+#define TRACE_ACTIVE_SAMLL_TAR (0.2)
+#define TRACE_ACTIVE_PERCENT (0.4)
 
 #define TRACE_FINAL_CONFIRM_PERCENT_EX_SMALL (0.3)
 //#define TRACE_FINAL_CONFIRM_PERCENT_SMALL (0.7)
 #define TRACE_FINAL_CONFIRM_PERCENT_BIG (0.5)
 
-#define TRACE_DELETE_PERCENT    (0.3)
+#define TRACE_DELETE_PERCENT (0.3)
 
 #define _TRK_VER_ (0x00000106)
 
@@ -75,7 +74,6 @@ using Eigen::VectorXd;
 
 #define InValidPoint (1)
 #define ValidPoint (0)
-
 
 #if 1
 typedef struct {
@@ -286,15 +284,13 @@ typedef struct manage_struct {
   double trace_belief;
 } manage_struct;
 
+typedef struct shape_struct {
+  std::deque<double> len_fifo, wid_fifo, height_fifo, theta_fifo;
+  double P_[4];
 
-typedef struct shape_struct
-{
-    std::deque<double> len_fifo, wid_fifo, height_fifo, theta_fifo;
-    double P_[4];
-
-    Eigen::Vector4d X;
-    Eigen::Matrix4d P;
-}shape_struct;
+  Eigen::Vector4d X;
+  Eigen::Matrix4d P;
+} shape_struct;
 
 // 跟踪目标（Object）信息结构体
 typedef struct trackTable_ {
@@ -338,7 +334,7 @@ typedef struct {
   double Vlong;
   gear_enum_t gear;
 
-   bool yawRateValid = false;
+  bool yawRateValid = false;
   uint32_t highYawRateCount = 0;
 } vehicleInfo_struct;
 
@@ -390,12 +386,11 @@ typedef struct kf_info_ {
   Eigen::MatrixXd P_ = Eigen::MatrixXd(SSIZE, SSIZE);
 } kf_info_t;
 
-typedef enum
-{
-    EMPTY = 0,
-    UNACTIVATE,
-    ACTIVATE,
-}static_trace_status_enum;
+typedef enum {
+  EMPTY = 0,
+  UNACTIVATE,
+  ACTIVATE,
+} static_trace_status_enum;
 
 typedef struct gridTrack_ {
   uint32_t ID;
@@ -427,26 +422,24 @@ typedef struct gridTrack_ {
   shape_struct shape_status;
 } gridTrack_t;
 
+typedef enum {
+  DYNAMIC_BOX = 0,
+  STATIC_BOX,
+} box_dyn_static_enum;
 
 typedef enum {
-    DYNAMIC_BOX = 0,
-    STATIC_BOX,
-}box_dyn_static_enum;
+  ACTIVE_DYNAMIC_TRACK = 0,
+  UNACTIVE_DYNAMIC_TRACK,
+  ACTIVE_STATIC_TRACK,
+  UNACTIVE_STATIC_TRACK,
+  RESERVED_TRACK,
+} assigned_obj_enum;
 
 typedef enum {
-    ACTIVE_DYNAMIC_TRACK = 0,
-    UNACTIVE_DYNAMIC_TRACK,
-    ACTIVE_STATIC_TRACK,
-    UNACTIVE_STATIC_TRACK,
-    RESERVED_TRACK,
-}assigned_obj_enum;
-
-typedef enum
-{
-   VALID = 0,
-   HAS_MATCHED,
-   NOT_USED_FOR_INIT,
-}box_status_enum;
+  VALID = 0,
+  HAS_MATCHED,
+  NOT_USED_FOR_INIT,
+} box_status_enum;
 
 typedef struct det_box_ {
   float wid;
@@ -476,9 +469,6 @@ typedef struct {
   vehicleInfo_struct vehicleInfo;
   std::vector<RadarMeasure_struct> point_set;
 } static_point_snapshot_t;
-
-
-
 
 #define STATIC_RANGE_LAT (30)
 #define STATIC_RANGE_LONG (50)

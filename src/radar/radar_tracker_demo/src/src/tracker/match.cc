@@ -7,11 +7,10 @@
  * @LastEditTime: 2023-11-07 14:33:21
  */
 
-#include "match.h"
-
-#include "commonfunctions.h"
-#include "common/DBSCAN.h"
 #include "../../include/common/iou.h"
+#include "common/DBSCAN.h"
+#include "commonfunctions.h"
+#include "match.h"
 
 using namespace std;
 using Eigen::MatrixXd;
@@ -53,21 +52,16 @@ void BulidPointSet4DBSCAN2(std::vector<RadarMeasure_struct> &fifo_point,
         atan2(Point.PointInfo.DistLat, Point.PointInfo.DistLong) / 3.14F *
         180.0F;
 
-     // 提高正前方运动目标的关联门限
-    if(fabs(Point.PointInfo.DistLat) < 2.0)
-    {
-        Point.DBSCAN_para.Search_R = 2.5F + fabs(Point.PointInfo.V) * 0.2;
-    }
-    else
-    {
-        if(fabs(vehicleInfo.at(0).yaw_rate) < (5.0*DEG2RAD))
-        {
-            Point.DBSCAN_para.Search_R = 1.5F + fabs(Point.PointInfo.V) * 0.2;
-        }
-        else
-        {
-            Point.DBSCAN_para.Search_R = 2.5F + fabs(Point.PointInfo.V) * 0.2; // 自车转弯是扩大聚类半径
-        }
+    // 提高正前方运动目标的关联门限
+    if (fabs(Point.PointInfo.DistLat) < 2.0) {
+      Point.DBSCAN_para.Search_R = 2.5F + fabs(Point.PointInfo.V) * 0.2;
+    } else {
+      if (fabs(vehicleInfo.at(0).yaw_rate) < (5.0 * DEG2RAD)) {
+        Point.DBSCAN_para.Search_R = 1.5F + fabs(Point.PointInfo.V) * 0.2;
+      } else {
+        Point.DBSCAN_para.Search_R =
+            2.5F + fabs(Point.PointInfo.V) * 0.2;  // 自车转弯是扩大聚类半径
+      }
     }
 
     Point.DBSCAN_para.minPts = 1;
@@ -174,37 +168,39 @@ void dynamic_trace_assigned_with_point(
     const std::vector<std::vector<uint16_t>> all_assigned_box,
     const std::vector<std::vector<uint16_t>> &clusterSet,
     const std::vector<det_box_t> &det_box_list) {
-
   VectorXd measData2 = VectorXd(2);
 
   for (uint8_t trackidx = 0; trackidx < TraceSet.size(); trackidx++) {
     // 本次是否关联到目标
-    if (all_assigned_box.at(all_assigned_box.size() - TraceSet.size() + trackidx).size() == 0) {
+    if (all_assigned_box
+            .at(all_assigned_box.size() - TraceSet.size() + trackidx)
+            .size() == 0) {
       continue;
     }
 
-    trackTable_strcut *trace = &trackInfo[TraceSet.at(trackidx)];  // 获取索引号对应的真正的航迹序号
+    trackTable_strcut *trace =
+        &trackInfo[TraceSet.at(trackidx)];  // 获取索引号对应的真正的航迹序号
 
-    std::cout << "Matched !" << "Trace ID:[ " <<  trace->trackID << "] "
-              << trace->KalmanInfo.StateEst(iDistLat) << ", " << trace->KalmanInfo.StateEst(iDistLong) << std::endl;
+    std::cout << "Matched !"
+              << "Trace ID:[ " << trace->trackID << "] "
+              << trace->KalmanInfo.StateEst(iDistLat) << ", "
+              << trace->KalmanInfo.StateEst(iDistLong) << std::endl;
 
     Eigen::Matrix2d rmm_temp, rmm_temp_inv, rmm_temp2, rmm_temp_inv2;
 
-    if(fabs(fabs(trace->ExtendInfo.box_theta) - 90.0*DEG2RAD) < (30.0*DEG2RAD))
-    {
-        compute_new_ellis_mat(trace, rmm_temp, 1.2);
-        rmm_temp_inv = rmm_temp.inverse();
+    if (fabs(fabs(trace->ExtendInfo.box_theta) - 90.0 * DEG2RAD) <
+        (30.0 * DEG2RAD)) {
+      compute_new_ellis_mat(trace, rmm_temp, 1.2);
+      rmm_temp_inv = rmm_temp.inverse();
 
-        compute_new_ellis_mat(trace, rmm_temp2, 0.8);
-        rmm_temp_inv2 = rmm_temp2.inverse();
-    }
-    else
-    {
-        compute_new_ellis_mat(trace, rmm_temp, 0.8);
-        rmm_temp_inv = rmm_temp.inverse();
+      compute_new_ellis_mat(trace, rmm_temp2, 0.8);
+      rmm_temp_inv2 = rmm_temp2.inverse();
+    } else {
+      compute_new_ellis_mat(trace, rmm_temp, 0.8);
+      rmm_temp_inv = rmm_temp.inverse();
 
-        compute_new_ellis_mat(trace, rmm_temp2, 0.5);
-        rmm_temp_inv2 = rmm_temp2.inverse();
+      compute_new_ellis_mat(trace, rmm_temp2, 0.5);
+      rmm_temp_inv2 = rmm_temp2.inverse();
     }
 
     rect_point_struct trace_box;
@@ -252,7 +248,8 @@ void dynamic_trace_assigned_with_point(
         measData2 << detInfo.DistLong - trace->KalmanInfo.StateEst(1),
             detInfo.DistLat - trace->KalmanInfo.StateEst(0);
 
-        double likeliHood_pos_big = measData2.transpose() * rmm_temp_inv * measData2;
+        double likeliHood_pos_big =
+            measData2.transpose() * rmm_temp_inv * measData2;
         likeliHood_pos_big = exp(-0.5 * pow(likeliHood_pos_big, 2.0));
 
         double likeliHood_pos_small =
@@ -293,8 +290,8 @@ void dynamic_trace_assigned_with_point(
       }
     }
 
-    // 统计所有关联点形成的box与航迹box的iou
-    #if 0
+// 统计所有关联点形成的box与航迹box的iou
+#if 0
     if ((trace->ExtendInfo.Length > 6.0) &&
         (fabs(trace->ExtendInfo.Orin_For_Display) < (10.0 * DEG2RAD))) {
       auto meas_lat_minmax = std::minmax_element(xpos.begin(), xpos.end());
@@ -368,7 +365,7 @@ void dynamic_trace_assigned_with_point(
         trace->MeasInfo.detInfo.clear();
       }
     }
-    #endif
+#endif
   }
 }
 

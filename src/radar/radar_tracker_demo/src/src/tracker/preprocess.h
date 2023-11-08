@@ -27,5 +27,4 @@ void pointsProcess(RadarOutput_Struct &indata,
 void perprocess(RadarOutput_Struct &indata,
                 std::vector<vehicleInfo_struct> &vehicleInfo);
 
-
 #endif

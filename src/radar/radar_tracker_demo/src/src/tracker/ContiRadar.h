@@ -89,8 +89,8 @@ typedef enum {
 typedef enum {
   moving = 0,
   stationary,
-  oncoming,  //2
-  stationary_candidate, //3
+  oncoming,              // 2
+  stationary_candidate,  // 3
   unknown,
   crossing_stationary,
   crossing_moving,
@@ -169,9 +169,9 @@ typedef struct {
   uint8_t InvalidState;  //检测点是否有效的标识，分为很多种状态
   uint8_t InvalidStates_Valid : 1;
 
-//  uint8_t Point_mode;
-//  uint8_t AngIdx;
-//  uint8_t AngProb;
+  //  uint8_t Point_mode;
+  //  uint8_t AngIdx;
+  //  uint8_t AngProb;
 
   /* 额外属性请向下延伸定义 */
   uint8_t invalid;

@@ -20,7 +20,6 @@ using Eigen::MatrixXi;
 using Eigen::VectorXd;
 using Eigen::VectorXi;
 
-
 //静态目标累积帧数
 #define ACCU_FRAME_NUM (10)
 //动静态目标分离速度门限
@@ -41,9 +40,11 @@ bool isInRectangle(MatrixXd rectangle_global, staticPoint_struct pointIn);
 void GetInstallInfo(uint8_t sensorID, float *x_pos, float *y_pos, float *yaw);
 
 VectorXd model2(MatrixXd dataIn, int16_t n);
-bool myransac(MatrixXd dataIn, int16_t datalen, int16_t n_shuffle, int16_t itersNum, float dis, float per, VectorXd &vEst, VectorXi &inlierIndex, uint16_t *inlier_num);
+bool myransac(MatrixXd dataIn, int16_t datalen, int16_t n_shuffle,
+              int16_t itersNum, float dis, float per, VectorXd &vEst,
+              VectorXi &inlierIndex, uint16_t *inlier_num);
 
-void motionStateDist2(RadarOutput_Struct& indata,
-                     std::vector<vehicleInfo_struct> &vehicleInfo,
-                     staticPointSet_struct & staticPointSetOut);
+void motionStateDist2(RadarOutput_Struct &indata,
+                      std::vector<vehicleInfo_struct> &vehicleInfo,
+                      staticPointSet_struct &staticPointSetOut);
 #endif

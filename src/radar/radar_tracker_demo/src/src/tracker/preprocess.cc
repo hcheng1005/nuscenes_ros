@@ -6,9 +6,9 @@
  * @LastEditors: ChengHao hao.cheng@wuzheng.com
  * @LastEditTime: 2023-11-03 14:56:48
  */
-#include "preprocess.h"
-
 #include <iostream>
+
+#include "preprocess.h"
 
 using namespace std;
 using Eigen::MatrixXd;
@@ -115,8 +115,8 @@ void delete_outliers(RadarOutput_Struct *indata) {
   indata->Header.ShouldRecNum = reID;
   indata->Header.ActualRecNum = reID;
 
-  std::cout << "final valid number: " << indata->Header.ShouldRecNum << std::endl;
-
+  std::cout << "final valid number: " << indata->Header.ShouldRecNum
+            << std::endl;
 }
 
 /**

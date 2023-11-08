@@ -7,13 +7,11 @@
  * @LastEditTime: 2023-11-07 14:31:41
  */
 
-#include "track_static_trace.h"
-
-#include "commonfunctions.h"
-#include "common/DBSCAN.h"
-#include "track_manage.h"
-
 #include "../../include/common/iou.h"
+#include "common/DBSCAN.h"
+#include "commonfunctions.h"
+#include "track_manage.h"
+#include "track_static_trace.h"
 
 #ifdef ARS548_RADAR
 #define FIFO_DEPTH (3)
@@ -47,8 +45,8 @@ void fifo_point_proc(RadarOutput_Struct *indata,
   cur_snapshot.vehicleInfo = vehicleInfo;
   vehicle_temp = vehicleInfo;
   for (uint16_t n = 0; n < indata->Header.ActualRecNum; n++) {
-    if((indata->RadarMeasure[n].invalid == (1 << invalid_det)) || (indata->RadarMeasure[n].RCS < -8.0))
-    {
+    if ((indata->RadarMeasure[n].invalid == (1 << invalid_det)) ||
+        (indata->RadarMeasure[n].RCS < -8.0)) {
       continue;
     }
     cur_snapshot.point_set.push_back(indata->RadarMeasure[n]);
@@ -172,25 +170,19 @@ void trace_meas_dbscan(std::vector<RadarMeasure_struct> &point_fifo,
 #else
 
       // 不同信噪比的点云的簇最小个数门限不同
-      if(Point.PointInfo.RCS > 10.0)
-      {
-          Point.DBSCAN_para.minPts = 4;
-          Point.DBSCAN_para.Search_R = 2.5F;
-      }
-      else if(Point.PointInfo.RCS > 0.0)
-      {
-          Point.DBSCAN_para.minPts = 4;
-          Point.DBSCAN_para.Search_R = 2.0F;
-      }
-      else
-      {
-          Point.DBSCAN_para.minPts = 4;
-          Point.DBSCAN_para.Search_R = 1.5F;
+      if (Point.PointInfo.RCS > 10.0) {
+        Point.DBSCAN_para.minPts = 4;
+        Point.DBSCAN_para.Search_R = 2.5F;
+      } else if (Point.PointInfo.RCS > 0.0) {
+        Point.DBSCAN_para.minPts = 4;
+        Point.DBSCAN_para.Search_R = 2.0F;
+      } else {
+        Point.DBSCAN_para.minPts = 4;
+        Point.DBSCAN_para.Search_R = 1.5F;
       }
 
-      if(fabs(Point.PointInfo.DistLat) < 1.0)
-      {
-          Point.DBSCAN_para.Search_R = 2.0F;
+      if (fabs(Point.PointInfo.DistLat) < 1.0) {
+        Point.DBSCAN_para.Search_R = 2.0F;
       }
 
 #endif
@@ -252,8 +244,7 @@ void track_predict_static(gridTrack_t *track_list,
       high_motor_driven += 5;
     }
 
-    if(high_motion_count < 40)
-    {
+    if (high_motion_count < 40) {
       high_motion_count += 1;
     }
   } else {
@@ -262,9 +253,8 @@ void track_predict_static(gridTrack_t *track_list,
       vel_coef = 0.8;
     }
 
-    if(high_motion_count)
-    {
-        high_motion_count--;
+    if (high_motion_count) {
+      high_motion_count--;
     }
   }
 
@@ -288,8 +278,7 @@ void track_predict_static(gridTrack_t *track_list,
   double std_accLat_ = 0.2;
   double std_accLong_ = 0.2;
 
-  if(high_motor_driven)
-  {
+  if (high_motor_driven) {
     std_accLat_ = 0.4;
     std_accLong_ = 0.4;
   }
@@ -315,9 +304,8 @@ void track_predict_static(gridTrack_t *track_list,
   {
     gridTrack_t &subTrace = track_list[i];
 
-    if((high_motion_count == 40.0) && (subTrace.status > EMPTY))
-    {
-        subTrace.status = EMPTY;
+    if ((high_motion_count == 40.0) && (subTrace.status > EMPTY)) {
+      subTrace.status = EMPTY;
     }
 
     if (subTrace.status > EMPTY)  // can be used to build a new obj
@@ -335,17 +323,16 @@ void track_predict_static(gridTrack_t *track_list,
       double angle_max = compute_max_angle(subTrace.kf_info.X_(iDistLat),
                                            subTrace.kf_info.X_(iDistLong),
                                            subTrace.len, subTrace.wid);
-      if(fabs(angle_max) < (40.0 * DEG2RAD))
-      {
-          if (high_motor_driven > 0) {
-            Q_2(0, 0) += fabs(subTrace.diff_X) * 0.002;  // add X_NOISE
-            Q_2(1, 1) += fabs(subTrace.diff_Y) * 0.002;  // add Y_NOISE
-            Q_2(2, 2) += fabs(subTrace.diff_X) * 0.004;  // add VX_NOISE
-            Q_2(3, 3) += fabs(subTrace.diff_Y) * 0.004;  // add VY_NOISE
-          } else {
-            Q_2(3, 3) += (fabs(subTrace.diff_Y) * 0.004 +
-                          fabs(subTrace.diff_V) * 0.004);  // add VY_NOISE
-          }
+      if (fabs(angle_max) < (40.0 * DEG2RAD)) {
+        if (high_motor_driven > 0) {
+          Q_2(0, 0) += fabs(subTrace.diff_X) * 0.002;  // add X_NOISE
+          Q_2(1, 1) += fabs(subTrace.diff_Y) * 0.002;  // add Y_NOISE
+          Q_2(2, 2) += fabs(subTrace.diff_X) * 0.004;  // add VX_NOISE
+          Q_2(3, 3) += fabs(subTrace.diff_Y) * 0.004;  // add VY_NOISE
+        } else {
+          Q_2(3, 3) += (fabs(subTrace.diff_Y) * 0.004 +
+                        fabs(subTrace.diff_V) * 0.004);  // add VY_NOISE
+        }
       }
 
       kf_predict(subTrace.kf_info.X_, subTrace.kf_info.P_, F, F_T, Q_2);
@@ -417,7 +404,6 @@ void creat_det_box(std::vector<std::vector<uint16_t>> &clusterSet,
   }
 }
 
-
 /**
  * @name:
  * @description:
@@ -478,72 +464,73 @@ void static_trace_update(
     }
 
     // 判定该航迹最大角度
-    double angle_max = compute_max_angle(
-                        subTrace.kf_info.X_no_comp(iDistLat),
-                        subTrace.kf_info.X_no_comp(iDistLong), subTrace.len, subTrace.wid);
+    double angle_max = compute_max_angle(subTrace.kf_info.X_no_comp(iDistLat),
+                                         subTrace.kf_info.X_no_comp(iDistLong),
+                                         subTrace.len, subTrace.wid);
 
     // 20230529 add：异常box判定
-    double diff_r = sqrt(pow(new_box.x - subTrace.kf_info.X_no_comp(iDistLat), 2.0) + \
-                         pow(new_box.y - subTrace.kf_info.X_no_comp(iDistLong), 2.0));
-    if(assigned_flag)
-    {
-      if(((fabs(new_box.len - subTrace.len) > 6.0) || (fabs(new_box.wid - subTrace.wid) > 4.0) || (diff_r > 5.0) ) && \
-        (subTrace.status == UNACTIVATE)){
+    double diff_r =
+        sqrt(pow(new_box.x - subTrace.kf_info.X_no_comp(iDistLat), 2.0) +
+             pow(new_box.y - subTrace.kf_info.X_no_comp(iDistLong), 2.0));
+    if (assigned_flag) {
+      if (((fabs(new_box.len - subTrace.len) > 6.0) ||
+           (fabs(new_box.wid - subTrace.wid) > 4.0) || (diff_r > 5.0)) &&
+          (subTrace.status == UNACTIVATE)) {
         assigned_flag = false;
       }
 
-      if((((new_box.len - subTrace.len) > 6.0) || ((new_box.wid - subTrace.wid) > 4.0) || (diff_r > 5.0)) && \
-            (subTrace.status == ACTIVATE)){
+      if ((((new_box.len - subTrace.len) > 6.0) ||
+           ((new_box.wid - subTrace.wid) > 4.0) || (diff_r > 5.0)) &&
+          (subTrace.status == ACTIVATE)) {
         assigned_flag = false;
       }
     }
 
     if (!assigned_flag) {
       subTrace.UnAssoNum++;
-    } else
-    {
-        subTrace.UnAssoNum = 0;
+    } else {
+      subTrace.UnAssoNum = 0;
 
-        if (fabs(angle_max) < (45.0 * DEG2RAD)) {
-            // 形状参数更新
-            double len_add, wid_add;
-            len_add = Valuelimit(-0.1, 0.2, (new_box.len - subTrace.len));
-            wid_add = Valuelimit(-0.05, 0.1, (new_box.wid - subTrace.wid));
+      if (fabs(angle_max) < (45.0 * DEG2RAD)) {
+        // 形状参数更新
+        double len_add, wid_add;
+        len_add = Valuelimit(-0.1, 0.2, (new_box.len - subTrace.len));
+        wid_add = Valuelimit(-0.05, 0.1, (new_box.wid - subTrace.wid));
 
-            subTrace.len += len_add;
-            subTrace.wid += wid_add;
+        subTrace.len += len_add;
+        subTrace.wid += wid_add;
 
-            subTrace.len = Valuelimit(0.5, 10, subTrace.len);
-            subTrace.wid = Valuelimit(0.5, 10, subTrace.wid);
+        subTrace.len = Valuelimit(0.5, 10, subTrace.len);
+        subTrace.wid = Valuelimit(0.5, 10, subTrace.wid);
 
-            double new_height = 0.5;
-            if ((subTrace.len * subTrace.wid) > 4.0) {
-              new_height = 1.0;
+        double new_height = 0.5;
+        if ((subTrace.len * subTrace.wid) > 4.0) {
+          new_height = 1.0;
 
-              if (subTrace.len > 6.0) {
-                new_height = 1.5;
-              }
-            }
-
-            if (new_height > subTrace.height) {
-              subTrace.height = new_height;
-            }
+          if (subTrace.len > 6.0) {
+            new_height = 1.5;
+          }
         }
 
-        // 计算航迹预测量测和实际量测
-        Eigen::VectorXd measZ = VectorXd(3);
-        Eigen::VectorXd preZ = VectorXd(3);
+        if (new_height > subTrace.height) {
+          subTrace.height = new_height;
+        }
+      }
 
-        compute_predictZ_and_measZ(subTrace, new_box, preZ, measZ);
+      // 计算航迹预测量测和实际量测
+      Eigen::VectorXd measZ = VectorXd(3);
+      Eigen::VectorXd preZ = VectorXd(3);
 
-        // 若最大角度超过阈值，则不进行kalman更新过程
-//        if (fabs(angle_max) < (40.0 * DEG2RAD)) {
-          // 卡尔曼状态更新
-          kf_update(subTrace.kf_info.X_no_comp, subTrace.kf_info.P_, preZ, measZ,
-                    1.0, subTrace);
+      compute_predictZ_and_measZ(subTrace, new_box, preZ, measZ);
 
-          subTrace.kf_info.X_ = subTrace.kf_info.X_no_comp;
-//        }
+      // 若最大角度超过阈值，则不进行kalman更新过程
+      //        if (fabs(angle_max) < (40.0 * DEG2RAD)) {
+      // 卡尔曼状态更新
+      kf_update(subTrace.kf_info.X_no_comp, subTrace.kf_info.P_, preZ, measZ,
+                1.0, subTrace);
+
+      subTrace.kf_info.X_ = subTrace.kf_info.X_no_comp;
+      //        }
     }
 
     // 本次关联到的box中，是否有运动点迹
@@ -693,76 +680,70 @@ void compute_predictZ_and_measZ(gridTrack_t &trace, box_t &new_box,
 
   // 判定目标是否处于车辆正前方【-1，1】
   bool front_at_vehicle_ = true;
-  if(((trace.kf_info.X_no_comp(iDistLat) > 0.0) && ((trace.kf_info.X_no_comp(iDistLat) - (0.5 * trace.wid)) > 1.0)) ||
-      ((trace.kf_info.X_no_comp(iDistLat) < 0.0) && ((trace.kf_info.X_no_comp(iDistLat) + (0.5 * trace.wid)) < -1.0)))
-  {
+  if (((trace.kf_info.X_no_comp(iDistLat) > 0.0) &&
+       ((trace.kf_info.X_no_comp(iDistLat) - (0.5 * trace.wid)) > 1.0)) ||
+      ((trace.kf_info.X_no_comp(iDistLat) < 0.0) &&
+       ((trace.kf_info.X_no_comp(iDistLat) + (0.5 * trace.wid)) < -1.0))) {
     front_at_vehicle_ = false;
   }
 
-  if(!front_at_vehicle_) //目标位于车辆两侧
+  if (!front_at_vehicle_)  //目标位于车辆两侧
   {
-      //TODO: 超过45°后，是否考虑不再更新
-      // 超过45后，目前下边缘不可见，因此将Y基础更改为目标上边缘
-      if (fabs(angle_max) > (40.0 * DEG2RAD)) {
-
-        if(trace.kf_info.X_no_comp(iDistLat) > 0.0)
-        {
-            preZ(0) = trace.kf_info.X_no_comp(iDistLat) - 0.5 * trace.wid;
-            measZ(0) = new_box.x - 0.5 * new_box.wid;
-        }
-        else
-        {
-            preZ(0) = trace.kf_info.X_no_comp(iDistLat) + 0.5 * trace.wid;
-            measZ(0) = new_box.x + 0.5 * new_box.wid;
-        }
-
-        preZ(1) = trace.kf_info.X_no_comp(iDistLong) * 0.7 + \
-                    0.3 * (trace.kf_info.X_no_comp(iDistLong) + 0.5 * trace.len);
-        measZ(1) = new_box.y * 0.7 + 0.3 * (new_box.y + 0.5 * new_box.len);
-
-//        // 航迹中心点是否超过40度
-//        double center_angle = (atan(trace.kf_info.X_no_comp(iDistLat) / \
-//                              (trace.kf_info.X_no_comp(iDistLong) - 0.5 * trace.len - 2.4)));
-
-//        if(fabs(center_angle) > (45.0 * DEG2RAD))
-//        {
-//            preZ(1) = trace.kf_info.X_no_comp(iDistLong) * 0.7 + 0.3 * (trace.kf_info.X_no_comp(iDistLong) + 0.5 * trace.len);
-//            measZ(1) = new_box.y * 0.7 + 0.3 * (new_box.y + 0.5 * new_box.len);
-//        }
+    // TODO: 超过45°后，是否考虑不再更新
+    // 超过45后，目前下边缘不可见，因此将Y基础更改为目标上边缘
+    if (fabs(angle_max) > (40.0 * DEG2RAD)) {
+      if (trace.kf_info.X_no_comp(iDistLat) > 0.0) {
+        preZ(0) = trace.kf_info.X_no_comp(iDistLat) - 0.5 * trace.wid;
+        measZ(0) = new_box.x - 0.5 * new_box.wid;
+      } else {
+        preZ(0) = trace.kf_info.X_no_comp(iDistLat) + 0.5 * trace.wid;
+        measZ(0) = new_box.x + 0.5 * new_box.wid;
       }
-      else
+
+      preZ(1) = trace.kf_info.X_no_comp(iDistLong) * 0.7 +
+                0.3 * (trace.kf_info.X_no_comp(iDistLong) + 0.5 * trace.len);
+      measZ(1) = new_box.y * 0.7 + 0.3 * (new_box.y + 0.5 * new_box.len);
+
+      //        // 航迹中心点是否超过40度
+      //        double center_angle = (atan(trace.kf_info.X_no_comp(iDistLat) /
+      //        \
+//                              (trace.kf_info.X_no_comp(iDistLong) - 0.5
+      //                              * trace.len - 2.4)));
+
+      //        if(fabs(center_angle) > (45.0 * DEG2RAD))
+      //        {
+      //            preZ(1) = trace.kf_info.X_no_comp(iDistLong) * 0.7 + 0.3 *
+      //            (trace.kf_info.X_no_comp(iDistLong) + 0.5 * trace.len);
+      //            measZ(1) = new_box.y * 0.7 + 0.3 * (new_box.y + 0.5 *
+      //            new_box.len);
+      //        }
+    } else {
+      // 目标位于左侧
+      if (trace.kf_info.X_no_comp(iDistLat) > 0.0) {
+        preZ << (trace.kf_info.X_no_comp(iDistLat) - 0.5 * trace.wid),
+            (trace.kf_info.X_no_comp(iDistLong) - 0.5 * trace.len),
+            temp_data / range_;
+
+        measZ << (new_box.x - 0.5 * new_box.wid),
+            (new_box.y - 0.5 * new_box.len), new_box.v;
+      } else  // 目标位于右侧
       {
-         // 目标位于左侧
-        if(trace.kf_info.X_no_comp(iDistLat) > 0.0)
-        {
-            preZ << (trace.kf_info.X_no_comp(iDistLat) - 0.5 * trace.wid),
-                (trace.kf_info.X_no_comp(iDistLong) - 0.5 * trace.len),
-                temp_data / range_;
+        preZ << (trace.kf_info.X_no_comp(iDistLat) + 0.5 * trace.wid),
+            (trace.kf_info.X_no_comp(iDistLong) - 0.5 * trace.len),
+            temp_data / range_;
 
-            measZ << (new_box.x - 0.5 * new_box.wid),
-                    (new_box.y - 0.5 * new_box.len),
-                    new_box.v;
-        }
-        else // 目标位于右侧
-        {
-            preZ << (trace.kf_info.X_no_comp(iDistLat) + 0.5 * trace.wid),
-                (trace.kf_info.X_no_comp(iDistLong) - 0.5 * trace.len),
-                temp_data / range_;
-
-            measZ << (new_box.x + 0.5 * new_box.wid),
-                     (new_box.y - 0.5 * new_box.len),
-                     new_box.v;
-        }
+        measZ << (new_box.x + 0.5 * new_box.wid),
+            (new_box.y - 0.5 * new_box.len), new_box.v;
       }
+    }
 
-  }
-  else // 目标处于本车正前方
+  } else  // 目标处于本车正前方
   {
-      preZ << trace.kf_info.X_no_comp(iDistLat),
-          (trace.kf_info.X_no_comp(iDistLong) - 0.5 * trace.len),
-          temp_data / range_;
+    preZ << trace.kf_info.X_no_comp(iDistLat),
+        (trace.kf_info.X_no_comp(iDistLong) - 0.5 * trace.len),
+        temp_data / range_;
 
-      measZ << new_box.x, (new_box.y - 0.5 * new_box.len), new_box.v;
+    measZ << new_box.x, (new_box.y - 0.5 * new_box.len), new_box.v;
   }
 }
 
@@ -779,13 +760,11 @@ void creat_new_static_trace(gridTrack_t *track_list,
                             std::vector<uint8_t> valid_empty_list) {
   static uint16_t static_real_id = 1000;
 
-
   Eigen::Matrix3d rotation_car;
-  rotation_car << 0, vehicle_temp.yaw_rate, 0.0,
-                  -1.0 * vehicle_temp.yaw_rate, 0, 0.0,
-                    0.0,0.0, 0;
+  rotation_car << 0, vehicle_temp.yaw_rate, 0.0, -1.0 * vehicle_temp.yaw_rate,
+      0, 0.0, 0.0, 0.0, 0;
 
-  Eigen::Vector3d local_loc;//(trace_info(0), trace_info(1), trace_info(2));
+  Eigen::Vector3d local_loc;  //(trace_info(0), trace_info(1), trace_info(2));
   Eigen::Vector3d angular_trans_speed;
 
   // 未被关联的box生成新航迹
@@ -802,8 +781,7 @@ void creat_new_static_trace(gridTrack_t *track_list,
         continue;
       }
 
-      if((det_box.wid < 0.8) && (det_box.len < 0.8))
-      {
+      if ((det_box.wid < 0.8) && (det_box.len < 0.8)) {
         continue;
       }
 
@@ -818,9 +796,9 @@ void creat_new_static_trace(gridTrack_t *track_list,
       local_loc << det_box.y_pos, det_box.x_pos, 0.0;
       angular_trans_speed = rotation_car * local_loc;
 
-      subTrace.kf_info.X_ << det_box.x_pos, det_box.y_pos, angular_trans_speed(1),
-                            det_box.v_mean + angular_trans_speed(0),
-                            0.0, 0.0;
+      subTrace.kf_info.X_ << det_box.x_pos, det_box.y_pos,
+          angular_trans_speed(1), det_box.v_mean + angular_trans_speed(0), 0.0,
+          0.0;
 
       subTrace.kf_info.P_ = MatrixXd::Identity(6, 6) * 0.1;
 
@@ -902,35 +880,33 @@ double kf_update(Eigen::VectorXd &X, Eigen::MatrixXd &P, Eigen::VectorXd preZ,
 
   Eigen::VectorXd diff_ = measZ - preZ;
 
-//     TODO: 横纵向差值若大于阈值，则认为关联有误，不进行update
-//    if ((fabs(diff_(0)) > 2.0) || (fabs(diff_(1)) > 3.0)) {
-//      return 0.0;
-//    }
+  //     TODO: 横纵向差值若大于阈值，则认为关联有误，不进行update
+  //    if ((fabs(diff_(0)) > 2.0) || (fabs(diff_(1)) > 3.0)) {
+  //      return 0.0;
+  //    }
 
-//    if((fabs(diff_(0)) > 2.0) || \
+  //    if((fabs(diff_(0)) > 2.0) || \
 //       ((diff_(1) > 4.0) || (diff_(1) < -4.0)))
-//    {
-//        return 0.0;
-//    }
+  //    {
+  //        return 0.0;
+  //    }
 
   trace.diff_X *= 0.9;
   trace.diff_Y *= 0.95;
   trace.diff_V *= 0.95;
 
-//  if (high_motor_driven > 0) {
-////    diff_(0) = Valuelimit(-1.0, 1.0, diff_(0));
-//    diff_(1) = Valuelimit(-1.5, 0.5, diff_(1));
-//    diff_(2) = Valuelimit(-1.0, 1.0, diff_(2));
-//  } else {
-//    diff_(0) = Valuelimit(-1.0, 1.0, diff_(0));
-//    diff_(1) = Valuelimit(-1.5, 0.5, diff_(1));
-//    diff_(2) = Valuelimit(-1.0, 1.0, diff_(2));
-//  }
+  //  if (high_motor_driven > 0) {
+  ////    diff_(0) = Valuelimit(-1.0, 1.0, diff_(0));
+  //    diff_(1) = Valuelimit(-1.5, 0.5, diff_(1));
+  //    diff_(2) = Valuelimit(-1.0, 1.0, diff_(2));
+  //  } else {
+  //    diff_(0) = Valuelimit(-1.0, 1.0, diff_(0));
+  //    diff_(1) = Valuelimit(-1.5, 0.5, diff_(1));
+  //    diff_(2) = Valuelimit(-1.0, 1.0, diff_(2));
+  //  }
 
-  if((fabs(diff_(0)) > 2.0) || \
-     (fabs(diff_(1)) > 4.0))
-  {
-      return 0.0;
+  if ((fabs(diff_(0)) > 2.0) || (fabs(diff_(1)) > 4.0)) {
+    return 0.0;
   }
 
   diff_(0) = Valuelimit(-1.0, 1.0, diff_(0));
@@ -1231,26 +1207,21 @@ void compute_box_nearest_pos(const double x_pos, const double y_pos,
  */
 double compute_max_angle(const double x_pos, const double y_pos,
                          const double len, const double wid) {
-//  double new_x_pos;
+  //  double new_x_pos;
 
-//  if (fabs(x_pos + 0.5 * wid) > fabs(x_pos - 0.5 * wid)) {
-//    new_x_pos = (x_pos + 0.5 * wid);
-//  } else {
-//    new_x_pos = (x_pos - 0.5 * wid);
-//  }
+  //  if (fabs(x_pos + 0.5 * wid) > fabs(x_pos - 0.5 * wid)) {
+  //    new_x_pos = (x_pos + 0.5 * wid);
+  //  } else {
+  //    new_x_pos = (x_pos - 0.5 * wid);
+  //  }
 
-//  return (atan(new_x_pos / (y_pos - 0.5 * len - 2.4)));
+  //  return (atan(new_x_pos / (y_pos - 0.5 * len - 2.4)));
 
-  if((x_pos > 0.0) && ((x_pos - 0.5 * wid) > 0.0))
-  {
+  if ((x_pos > 0.0) && ((x_pos - 0.5 * wid) > 0.0)) {
     return (atan((x_pos - 0.5 * wid) / (y_pos - 0.5 * len - 2.4)));
-  }
-  else if((x_pos < 0.0) && ((x_pos + 0.5 * wid) < 0.0))
-  {
+  } else if ((x_pos < 0.0) && ((x_pos + 0.5 * wid) < 0.0)) {
     return (atan((x_pos + 0.5 * wid) / (y_pos - 0.5 * len - 2.4)));
-  }
-  else
-  {
+  } else {
     return 0.0;
   }
 }
