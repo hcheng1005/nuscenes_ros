@@ -28,9 +28,18 @@ class RadarTrackAlgProcess {
   void genMeasClusterBoxes(
       std::vector<RadarType::radarCluster_t> &radarClusters,
       std::vector<rect_basic_struct> &measBoxes);
+
+  void genCostMatrixEuclidean(std::vector<rect_basic_struct> &traceBoxes,
+                              std::vector<rect_basic_struct> &measBoxes,
+                              std::vector<std::vector<float>> &costMatrix);
+
   void genCostMatrixIOU(std::vector<rect_basic_struct> &traceBoxes,
                         std::vector<rect_basic_struct> &measBoxes,
                         std::vector<std::vector<float>> &costMatrix);
+
+  void genCostMatrixMahalanobis(
+      std::vector<RadarType::radarCluster_t> &radarClusters,
+      std::vector<std::vector<float>> &costMatrix);
 
   void genMatchedBoxes(std::vector<RadarType::radarPoint_t> &measSet,
                        std::vector<RadarType::radarCluster_t> &radarClusters,

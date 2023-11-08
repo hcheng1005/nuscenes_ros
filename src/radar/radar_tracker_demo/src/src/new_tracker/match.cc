@@ -32,7 +32,8 @@ void matchAlgGreedy(std::vector<std::vector<float>> &costMatrix,
 
   // 执行greedy分配
   for (const auto &subCost : newCostMatrix) {
-    if (subCost.costVal > 0.1)  // 最低分配门限
+    if (subCost.costVal < 9.3484)  // 最低分配门限 // chi2 with n=3：[0.05
+                                   // : 7.8147; 0.025 : 9.3484]
     {
       if (measMatchedResult.at(subCost.measIdx) == 0)  // 未被分配
       {
@@ -46,5 +47,5 @@ void matchAlgGreedy(std::vector<std::vector<float>> &costMatrix,
 }
 
 bool greedAlgCompareFunction(const greedyData_t &A, const greedyData_t &B) {
-  return (A.costVal > B.costVal);
+  return (A.costVal < B.costVal);
 }

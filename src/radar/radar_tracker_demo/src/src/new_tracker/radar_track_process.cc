@@ -6,7 +6,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/opencv.hpp>
 
-// #define VISUALIZATION (true)
+#define VISUALIZATION (true)
 #ifdef VISUALIZATION
 cv::Mat image;
 #endif
@@ -56,9 +56,12 @@ void RadarTrackAlgProcess::trackPredict(const float dt) {
 void RadarTrackAlgProcess::matchTraceWithMeas(
     std::vector<RadarType::radarPoint_t>& measSet) {
   std::vector<std::vector<float>> costMatrix;
-  std::vector<std::vector<RadarType::radarPoint_t>>
-      traceMatchDets;                   // 航迹关联的所有点云
-  std::vector<Rect_t> traceMatchBoxes;  // 航迹关联的点云构成的bounding box
+
+  // 航迹关联的所有点云
+  std::vector<std::vector<RadarType::radarPoint_t>> traceMatchDets;
+
+  // 航迹关联的点云构成的bounding box
+  std::vector<Rect_t> traceMatchBoxes;
 
   // 先将measSet聚类成boxes
   auto radarClusters = pointCluster(measSet);
@@ -68,8 +71,10 @@ void RadarTrackAlgProcess::matchTraceWithMeas(
   genMeasClusterBoxes(radarClusters, this->measBoxes);
 
   // 计算代价矩阵
-  genCostMatrixIOU(traceBoxes, measBoxes, costMatrix);
+  // genCostMatrixIOU(traceBoxes, measBoxes, costMatrix);
+  genCostMatrixMahalanobis(radarClusters, costMatrix);
 
+  // 定义分配结果存储变量
   std::vector<int> measMatchedResult(measBoxes.size(), 0);
   std::vector<std::vector<int>> traceMatchedMeas(traceBoxes.size());
 
@@ -194,6 +199,12 @@ std::vector<RadarType::radarCluster_t> RadarTrackAlgProcess::pointCluster(
   for (uint16_t n = 0; n < measSet.size(); n++) {
     auto& sub_meas = measSet.at(n);
 
+    // 剔除点云
+    if ((sub_meas.x_cc < 0.0) || (fabs(sub_meas.vr_compensated) < 1.0) ||
+        (sub_meas.valid == false)) {
+      continue;
+    }
+
     // 添加点到点云数据
 #ifdef VISUALIZATION
     cv::circle(image,
@@ -201,12 +212,6 @@ std::vector<RadarType::radarCluster_t> RadarTrackAlgProcess::pointCluster(
                            600 - sub_meas.x_cc / 100 * 600),
                3, cv::Scalar(200, 200, 200), -1);
 #endif
-
-    // if ((sub_meas.x_cc < 0.0) || (fabs(sub_meas.vr_compensated) < 1.0) ||
-    // (sub_meas.valid == false))
-    // {
-    //     continue;
-    // }
 
     Point.PointInfo.ID = n;
 
@@ -227,13 +232,10 @@ std::vector<RadarType::radarCluster_t> RadarTrackAlgProcess::pointCluster(
 
     PointSet.push_back(Point);
   }
-  // std::cout << "DO KNN_DBSCAN " << std::endl;
 
   // Step 1: cluster
   DBSCAN::KNN_DBSCAN(PointSet, clusterSet);
 
-  // std::cout << "Cluster Result:[ " << clusterSet.size() << " ]" <<
-  // std::endl;///////
 #ifdef VISUALIZATION
   int idx = 0;
   for (auto& sub_cluster : clusterSet) {
@@ -323,14 +325,13 @@ void RadarTrackAlgProcess::genTraceBoxes(
     std::vector<rect_basic_struct>& traceBoxes) {
   traceBoxes.clear();
   for (const auto& subTrace : radarTraceList) {
-    rect_basic_struct subBox{
-        {subTrace.trace_status.trace_kalman.X(iDistLong),
-         subTrace.trace_status.trace_kalman.X(iDistLat), 0.0},
-        subTrace.trace_status.trace_shape.len,
-        subTrace.trace_status.trace_shape.wid,
-        0.0,
-        subTrace.trace_status.trace_shape.theta,
-        0.0};
+    rect_basic_struct subBox{{subTrace.trace_kalman.X(iDistLong),
+                              subTrace.trace_kalman.X(iDistLat), 0.0},
+                             subTrace.trace_shape.len,
+                             subTrace.trace_shape.wid,
+                             0.0,
+                             subTrace.trace_shape.theta,
+                             0.0};
     traceBoxes.push_back(subBox);
   }
 }
@@ -368,21 +369,67 @@ void RadarTrackAlgProcess::genCostMatrixIOU(
 
   for (const auto& measBox : measBoxes) {
     std::vector<float> subCostMatrix;
-
-    // std::cout << "measBox info: " << measBox.center_pos[0] << ", " <<
-    // measBox.center_pos[1] << ", "
-    //           << measBox.box_len << ", " << measBox.box_wid << std::endl;
-
     for (const auto& traceBox : traceBoxes) {
-      // std::cout << "traceBox info: " << traceBox.center_pos[0] << ", " <<
-      // traceBox.center_pos[1] << ", "
-      //           << traceBox.box_len << ", " << traceBox.box_wid << std::endl;
+      // 使用IOU作为距离衡量指标
+      float distance = static_cast<float>(IOU_2D(measBox, traceBox));
 
-      float IOU_ = static_cast<float>(IOU_2D(measBox, traceBox));
+      subCostMatrix.push_back(distance);
+    }
 
-      // std::cout << "IOU_ " << IOU_ << std::endl;
+    costMatrix.push_back(subCostMatrix);
+  }
+}
 
-      subCostMatrix.push_back(IOU_);
+/**
+ * @names:
+ * @description: Briefly describe the function of your function
+ * @return {*}
+ */
+void RadarTrackAlgProcess::genCostMatrixEuclidean(
+    std::vector<rect_basic_struct>& traceBoxes,
+    std::vector<rect_basic_struct>& measBoxes,
+    std::vector<std::vector<float>>& costMatrix) {
+  costMatrix.clear();
+
+  for (const auto& measBox : measBoxes) {
+    std::vector<float> subCostMatrix;
+    for (const auto& traceBox : traceBoxes) {
+      // 使用欧式距离作为距离横向指标
+      float distance =
+          -1.0 *
+          sqrt(pow((measBox.center_pos[0] - traceBox.center_pos[0]), 2.0) +
+               pow((measBox.center_pos[1] - traceBox.center_pos[1]), 2.0));
+
+      subCostMatrix.push_back(distance);
+    }
+
+    costMatrix.push_back(subCostMatrix);
+  }
+}
+
+/**
+ * @names:
+ * @description: Briefly describe the function of your function
+ * @return {*}
+ */
+void RadarTrackAlgProcess::genCostMatrixMahalanobis(
+    std::vector<RadarType::radarCluster_t>& radarClusters,
+    std::vector<std::vector<float>>& costMatrix) {
+  for (const auto& subCluster : radarClusters) {
+    std::vector<float> subCostMatrix;
+    Eigen::VectorXf newZ(3);
+    newZ << subCluster.center[0], subCluster.center[1], subCluster.vr;
+    for (auto& subTrace : radarTraceTable) {
+      Eigen::MatrixXf S = subTrace.getS();
+      Eigen::VectorXf ZPre = subTrace.getZPre();
+
+      float distance =
+          sqrt((newZ - ZPre).transpose() * S.inverse() * (newZ - ZPre));
+
+      std::cout << "diff: " << (newZ - ZPre).transpose()
+                << " maha: " << distance << std::endl;
+
+      subCostMatrix.push_back(distance);
     }
 
     costMatrix.push_back(subCostMatrix);
@@ -399,7 +446,7 @@ void RadarTrackAlgProcess::trackManager(void) {
   std::vector<RadarTracker> radarTraceTableNew;
 
   for (auto& subTrace : radarTraceTable) {
-    if (subTrace.trace_status.trace_manager.status != TRK_Delete) {
+    if (subTrace.trace_manager.status != TRK_Delete) {
       // std::cout << "delete it" << std::endl;
       radarTraceTableNew.push_back(subTrace);
     }
