@@ -1,7 +1,6 @@
-#include "radar_track_process.h"
-
 #include "../../include/common/lshape.h"
 #include "match.h"
+#include "radar_track_process.h"
 
 // OPENCV
 #include <opencv2/core/core.hpp>
@@ -69,7 +68,8 @@ void RadarTrackAlgProcess::matchTraceWithMeas(
   genMeasClusterBoxes(radarClusters, this->measBoxes);
 
   // 计算代价矩阵
-  genCostMatrixIOU(traceBoxes, measBoxes, costMatrix);
+  // genCostMatrixIOU(traceBoxes, measBoxes, costMatrix);
+  genCostMatrixMahalanobis(radarClusters, costMatrix);
 
   std::vector<int> measMatchedResult(measBoxes.size(), 0);
   std::vector<std::vector<int>> traceMatchedMeas(traceBoxes.size());
@@ -120,9 +120,9 @@ void RadarTrackAlgProcess::genMatchedBoxes(
       Eigen::VectorXf Z(3);
       Z << matchedBox.center_lat, matchedBox.center_long, matchedBox.vr;
 
-      subTrace->update_kinematic(Z);
-      subTrace->update_physical(matchedBox.length, matchedBox.width,
-                                0.0);  // TODO DONT CARE THETA??
+      subTrace->trace_update_kinematic(Z);
+      subTrace->trace_update_physical(matchedBox.length, matchedBox.width,
+                                      0.0);  // TODO DONT CARE THETA??
       subTrace->manager(true);
     } else {
       subTrace = radarTraceTable.at(traceIdx);
@@ -278,8 +278,8 @@ std::vector<RadarType::radarCluster_t> RadarTrackAlgProcess::pointCluster(
     auto w = std::minmax_element(wid_vec.begin(), wid_vec.end());
     auto v = std::minmax_element(vr_vec.begin(), vr_vec.end());
 
-    radar_cluster.center[1] = (*l.first + *l.second) * 0.5;
     radar_cluster.center[0] = (*w.first + *w.second) * 0.5;
+    radar_cluster.center[1] = (*l.first + *l.second) * 0.5;
     radar_cluster.vr = (*v.first + *v.second) * 0.5;
 
     radar_cluster.len = *l.second - *l.first;
@@ -324,8 +324,8 @@ void RadarTrackAlgProcess::genTraceBoxes(
     std::vector<rect_basic_struct> &traceBoxes) {
   traceBoxes.clear();
   for (const auto &subTrace : radarTraceList) {
-    rect_basic_struct subBox{{subTrace->trace_kalman.X(iDistLong),
-                              subTrace->trace_kalman.X(iDistLat), 0.0},
+    rect_basic_struct subBox{{subTrace->randomMatriceFilter->X(iDistLong),
+                              subTrace->randomMatriceFilter->X(iDistLat), 0.0},
                              subTrace->trace_shape.len,
                              subTrace->trace_shape.wid,
                              0.0,
@@ -368,21 +368,65 @@ void RadarTrackAlgProcess::genCostMatrixIOU(
 
   for (const auto &measBox : measBoxes) {
     std::vector<float> subCostMatrix;
-
-    // std::cout << "measBox info: " << measBox.center_pos[0] << ", " <<
-    // measBox.center_pos[1] << ", "
-    //           << measBox.box_len << ", " << measBox.box_wid << std::endl;
-
     for (const auto &traceBox : traceBoxes) {
-      // std::cout << "traceBox info: " << traceBox.center_pos[0] << ", " <<
-      // traceBox.center_pos[1] << ", "
-      //           << traceBox.box_len << ", " << traceBox.box_wid << std::endl;
+      // 使用IOU作为距离衡量指标
+      float distance = static_cast<float>(IOU_2D(measBox, traceBox));
 
-      float IOU_ = static_cast<float>(IOU_2D(measBox, traceBox));
+      subCostMatrix.push_back(distance);
+    }
 
-      // std::cout << "IOU_ " << IOU_ << std::endl;
+    costMatrix.push_back(subCostMatrix);
+  }
+}
 
-      subCostMatrix.push_back(IOU_);
+/**
+ * @names:
+ * @description: Briefly describe the function of your function
+ * @return {*}
+ */
+void RadarTrackAlgProcess::genCostMatrixEuclidean(
+    std::vector<rect_basic_struct> &traceBoxes,
+    std::vector<rect_basic_struct> &measBoxes,
+    std::vector<std::vector<float>> &costMatrix) {
+  costMatrix.clear();
+
+  for (const auto &measBox : measBoxes) {
+    std::vector<float> subCostMatrix;
+    for (const auto &traceBox : traceBoxes) {
+      // 使用欧式距离作为距离横向指标
+      float distance =
+          -1.0 *
+          sqrt(pow((measBox.center_pos[0] - traceBox.center_pos[0]), 2.0) +
+               pow((measBox.center_pos[1] - traceBox.center_pos[1]), 2.0));
+
+      subCostMatrix.push_back(distance);
+    }
+
+    costMatrix.push_back(subCostMatrix);
+  }
+}
+
+/**
+ * @names:
+ * @description: Briefly describe the function of your function
+ * @return {*}
+ */
+void RadarTrackAlgProcess::genCostMatrixMahalanobis(
+    std::vector<RadarType::radarCluster_t> &radarClusters,
+    std::vector<std::vector<float>> &costMatrix) {
+  for (const auto &subCluster : radarClusters) {
+    std::vector<float> subCostMatrix;
+    Eigen::VectorXf newZ(3);
+    newZ << subCluster.center[0], subCluster.center[1], subCluster.vr;
+    for (auto &subTrace : radarTraceTable) {
+      float distance = subTrace->randomMatriceFilter->computeMahalanobis(newZ);
+
+      // Eigen::VectorXf ZPre = subTrace->randomMatriceFilter->GetZPre();
+
+      // std::cout << "diff: " << (newZ - ZPre).transpose()
+      //           << " maha: " << distance << std::endl;
+
+      subCostMatrix.push_back(distance);
     }
 
     costMatrix.push_back(subCostMatrix);
@@ -429,7 +473,7 @@ void RadarTrackAlgProcess::traceBirth(
           globalID, radarClusters.at(clusterIdx).center[0],
           radarClusters.at(clusterIdx).center[1],
           radarClusters.at(clusterIdx).vr, radarClusters.at(clusterIdx).len,
-          radarClusters.at(clusterIdx).wid, radarClusters.at(clusterIdx).theta);
+          radarClusters.at(clusterIdx).wid, 0.0);
 
       radarTraceTable.push_back(newTracezzz);
 

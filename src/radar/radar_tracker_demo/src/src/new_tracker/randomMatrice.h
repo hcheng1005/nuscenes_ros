@@ -11,13 +11,33 @@
 template <typename T, uint x_dim, uint z_dim>
 class RandomMatriceFilter : public basicKalmanFilter<T, x_dim, z_dim> {
  public:
+  RandomMatriceFilter() {
+    // std::cout << "START A NEW [RandomMatriceFilter]" << std::endl;
+
+    Set_F();
+    Set_Q();
+    Set_H();
+    Set_R();
+  }
+
   void kalmanPredict() override {
+    // 目标运动状态预测
     predictState();
+
+    // 目标物理状态预测
     predictExtendState();
   }
 
+  void kalmanUpdate(Eigen::Matrix<T, Eigen::Dynamic, z_dim> newZ) override {
+    // 目标运动状态更新
+    updateKinematic(newZ);
+
+    // 目标物理状态更新
+    updatePhysical(newZ);
+  }
+
   ~RandomMatriceFilter() {
-    std::cout << "delete RandomMatriceFilter" << std::endl;
+    // std::cout << "delete RandomMatriceFilter" << std::endl;
   }
 
   /**
@@ -25,7 +45,7 @@ class RandomMatriceFilter : public basicKalmanFilter<T, x_dim, z_dim> {
    * @description: Briefly describe the function of your function
    * @return {*}
    */
-  void Set_F() {
+  void Set_F() override {
     const T dt = 0.075;
     this->F = this->F.setIdentity();
     this->F(iDistLat, iVrelLat) = dt;
@@ -42,7 +62,7 @@ class RandomMatriceFilter : public basicKalmanFilter<T, x_dim, z_dim> {
    * @description: Briefly describe the function of your function
    * @return {*}
    */
-  void Set_Q() {
+  void Set_Q() override {
     Eigen::Matrix<T, x_dim, z_dim> G;
     Eigen::Matrix<T, z_dim, z_dim> q;
 
@@ -63,21 +83,25 @@ class RandomMatriceFilter : public basicKalmanFilter<T, x_dim, z_dim> {
    * @description: Briefly describe the function of your function
    * @return {*}
    */
-  void Set_H(void) { this->H = this->H.setIdentity(); }
+  void Set_H() override { this->H = this->H.setIdentity(); }
 
   /**
    * @names:
    * @description: Briefly describe the function of your function
    * @return {*}
    */
-  void Set_R() {
+  void Set_R() override {
     this->R << std::pow(0.2, 2.0), 0.0, 0.0, 0.0, std::pow(0.2, 2.0), 0.0, 0.0,
         0.0, std::pow(0.2, 2.0);
   };
 
+  void SetSPDMat() { SPD_Mat = SPD_Mat.setOnes() * pow(0.5, 2.0); }
+
+  void getObjectShape(T* len, T* wid, T* theta) {}
+
  private:
   // vari for extendsion
-  Eigen::Matrix<T, x_dim, z_dim> X_ex;
+  Eigen::Matrix<T, z_dim, z_dim> SPD_Mat;
   T alpha_ = 2.0;
   T tau_ = 1.0;
 
@@ -90,8 +114,18 @@ class RandomMatriceFilter : public basicKalmanFilter<T, x_dim, z_dim> {
    * @return {*}
    */
   void predictState() {
+    // 运动状态预测
     this->X = this->F * this->X;
     this->P = this->F * this->P * this->F.transpose() + this->Q;
+
+    // 雅可比矩阵更新
+    computeMeasJacMat();
+
+    // 量测状态预测
+    this->Zpre = this->H * this->X;
+
+    this->S = this->H * this->P * this->H.transpose() + this->R;
+    this->K = this->P * this->H.transpose() * this->S.inverse();
   }
 
   /**
@@ -141,58 +175,74 @@ class RandomMatriceFilter : public basicKalmanFilter<T, x_dim, z_dim> {
   /**
    * @names:
    * @description: Briefly describe the function of your function
-   * @param {MatrixXf} meas_mat
+   * @param {Matrix<T, z_dim, 1>} meas_mat
    * @return {*}
    */
-  void Update_Without_Extension(Eigen::Matrix<T, -1, -1> meas_mat) {
-    Eigen::Matrix<T, z_dim, z_dim> Yk = 0.9 * X_ex + this->R;
+  void updateKinematic(Eigen::Matrix<T, Eigen::Dynamic, z_dim> meas_mat) {
+    int meas_num = meas_mat.rows();
+
+    Eigen::Matrix<T, z_dim, 1> y_hat = meas_mat.colwise().mean();
+
+    // compute kalman S and K
+    Eigen::Matrix<T, z_dim, z_dim> Yk = 0.9 * SPD_Mat + this->R;
+
+    // Eigen::Matrix<T, z_dim, z_dim> S =
+    //     this->H * this->P * this->H.transpose() + Yk / meas_num;
 
     Eigen::Matrix<T, z_dim, z_dim> S =
-        this->H * this->P * this->H.transpose() + Yk;
+        this->H * this->P * this->H.transpose() + this->R;
 
     Eigen::Matrix<T, x_dim, z_dim> K =
         this->P * this->H.transpose() * S.inverse();
 
-    Eigen::Matrix<T, z_dim, 1> y_hat = meas_mat.colwise().mean();
+    std::cout << "X1 \n" << this->X.transpose() << std::endl;
+    std::cout << "Diff: \n" << (y_hat - this->Zpre).transpose() << std::endl;
 
-    this->X = this->X + K * (y_hat - this->H * this->X);
+    std::cout << "P: \n" << this->P << std::endl;
+    std::cout << "H: \n" << this->H << std::endl;
+    std::cout << "S: \n" << S << std::endl;
+    std::cout << "K: \n" << K << std::endl;
+
+    this->X = this->X + K * (y_hat - this->Zpre);
     this->P = this->P - K * this->H * this->P;
+
+    std::cout << "X2 \n" << this->X.transpose() << std::endl;
   }
 
   /**
    * @names:
    * @description: Briefly describe the function of your function
-   * @param {MatrixXf} meas_mat
+   * @param {Matrix<T, z_dim, 1>} meas_mat
    * @return {*}
    */
-  void Update_With_Extension(Eigen::Matrix<T, z_dim, 1> meas_mat) {
+  void updatePhysical(Eigen::Matrix<T, Eigen::Dynamic, z_dim> meas_mat) {
     int meas_num = meas_mat.rows();
 
-    Eigen::Matrix<T, z_dim, 1> y_hat = meas_mat.colwise().mean();
+    if (meas_num <= 4) {
+      return;
+    }
 
-    Eigen::Matrix<T, -1, -1> Z_mean(
-        Eigen::Matrix<T, -1, -1>::Map(y_hat.data(), meas_mat.cols()));
+    Eigen::Matrix<T, 1, z_dim> y_hat = meas_mat.colwise().mean();
+    Eigen::Matrix<T, z_dim, 1> y_hat_vet = y_hat.transpose();
+
+    Eigen::Matrix<T, 1, z_dim> Z_mean(
+        Eigen::Matrix<T, 1, z_dim>::Map(y_hat_vet.data(), meas_mat.cols()));
 
     auto ZK = meas_mat.rowwise() - Z_mean;
 
     Eigen::Matrix<T, z_dim, z_dim> Yhat = (ZK.adjoint() * ZK) / (meas_num - 1);
 
     // compute kalman S and K
-    Eigen::Matrix<T, z_dim, z_dim> Yk = 0.9 * X_ex + this->R;
+    Eigen::Matrix<T, z_dim, z_dim> Yk = 0.9 * SPD_Mat + this->R;
 
     Eigen::Matrix<T, z_dim, z_dim> S =
         this->H * this->P * this->H.transpose() + Yk / meas_num;
 
-    Eigen::Matrix<T, x_dim, z_dim> K =
-        this->P * this->H.transpose() * S.inverse();
-
-    this->X = this->X + K * (y_hat - this->H * this->X);
-    this->P = this->P - this->K * this->H * this->P;
-
     Eigen::Matrix<T, z_dim, z_dim> N_ =
-        (y_hat - this->H * this->X) * ((y_hat - this->H * this->X).transpose());
+        (y_hat_vet - this->H * this->X) *
+        ((y_hat_vet - this->H * this->X).transpose());
 
-    Eigen::Matrix<T, z_dim, z_dim> X_chol = X_ex.ldlt().matrixL();
+    Eigen::Matrix<T, z_dim, z_dim> X_chol = SPD_Mat.ldlt().matrixL();
 
     Eigen::Matrix<T, z_dim, z_dim> S_chol = S.ldlt().matrixL();
 
@@ -206,11 +256,11 @@ class RandomMatriceFilter : public basicKalmanFilter<T, x_dim, z_dim> {
                                            Yk_chol.inverse().transpose() *
                                            X_chol.transpose();
 
-    X_ex = 1.0 / (alpha_ + meas_num) * (alpha_ * X_ex + N_hat + Y_hat);
+    SPD_Mat = 1.0 / (alpha_ + meas_num) * (alpha_ * SPD_Mat + N_hat + Y_hat);
 
     alpha_ = alpha_ + meas_num;
 
-    std::cout << "SPD Matrice:" << X_ex(0, 0) << " ," << X_ex(1, 1)
+    std::cout << "SPD Matrice:" << SPD_Mat(0, 0) << " ," << SPD_Mat(1, 1)
               << std::endl;
   }
 };

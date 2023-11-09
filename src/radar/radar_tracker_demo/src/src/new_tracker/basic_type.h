@@ -25,7 +25,7 @@ typedef struct {
   T center[2];  //
   T len;
   T wid;
-  T theta;
+  T theta = 0.0;
   T vr;
 
 } radarCluster_t;  // 雷达量测聚类结果

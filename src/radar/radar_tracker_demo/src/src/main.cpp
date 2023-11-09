@@ -286,8 +286,12 @@ void pub_trace_box(void) {
     std::vector<geometry_msgs::Point> points;
 
     // 横向、纵向、高度
-    Point3D center{-trace->trace_kalman.X(iDistLat),
-                   trace->trace_kalman.X(iDistLong), 1.0};
+    // Point3D center{-trace->trace_kalman.X(iDistLat),
+    //                trace->trace_kalman.X(iDistLong), 1.0};
+
+    Point3D center{-trace->randomMatriceFilter->X(iDistLat),
+                   trace->randomMatriceFilter->X(iDistLong), 1.0};
+
     std::vector<Point3D> corners;
     corners.resize(8);
     calculateBoxCorners(center, trace->trace_shape.wid, trace->trace_shape.len,
