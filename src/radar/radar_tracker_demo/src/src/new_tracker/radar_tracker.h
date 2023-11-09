@@ -3,8 +3,8 @@
  * @version:
  * @Author: ChengHao
  * @Date: 2022-10-12 08:58:47
- * @LastEditors: ChengHao hao.cheng@wuzheng.com
- * @LastEditTime: 2023-11-09 17:47:27
+ * @LastEditors: CharlesCH hcheng1005@gmail.com
+ * @LastEditTime: 2023-11-09 20:20:14
  */
 #pragma once
 
@@ -61,10 +61,10 @@ class RadarTracker {
   ~RadarTracker() { delete randomMatriceFilter; }
 
   void trace_predict();
-  void trace_update_kinematic(const VectorXf &Z);
+  void trace_update_kinematic_measCenter(const VectorXf &Z);
+  void trace_update_kinematic_measSet(const Eigen::MatrixXf &Z);
   void trace_update_physical(float new_len, float new_wid, float new_theta);
-
-  void manager(bool matchedFlag);
+  void trace_management(bool matchedFlag);
 
  private:
  public:

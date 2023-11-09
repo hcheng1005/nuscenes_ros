@@ -1,6 +1,6 @@
-﻿#include <iostream>
+﻿#include "radar_tracker.h"
 
-#include "radar_tracker.h"
+#include <iostream>
 
 RadarTracker::RadarTracker(uint new_id, float center_lat, float center_long,
                            float vr, float len, float wid, float theta) {
@@ -15,7 +15,7 @@ RadarTracker::RadarTracker(uint new_id, float center_lat, float center_long,
   X = X.setZero();
   X(iDistLat) = center_lat;
   X(iDistLong) = center_long;
-  X(iVrelLat) = vr * sin(atan2(center_lat, center_long));
+  X(iVrelLat) = vr * sin(atan2(center_lat, center_long)) * 0.5;
   X(iVrelLong) = vr * cos(atan2(center_lat, center_long));
 
   Eigen::Matrix<float, 6, 6> P;
@@ -43,9 +43,19 @@ void RadarTracker::trace_predict() { randomMatriceFilter->kalmanPredict(); }
  * @param {VectorXf&} Z
  * @return {*}
  */
-void RadarTracker::trace_update_kinematic(const VectorXf &Z) {
+void RadarTracker::trace_update_kinematic_measCenter(const VectorXf &Z) {
   std::cout << "Trace ID:[ " << trace_manager.id << " ]" << std::endl;
   randomMatriceFilter->kalmanUpdate(Z.transpose());
+}
+
+/**
+ * @names:
+ * @description: Briefly describe the function of your function
+ * @param {VectorXf&} Z
+ * @return {*}
+ */
+void RadarTracker::trace_update_kinematic_measSet(const Eigen::MatrixXf &Z) {
+  randomMatriceFilter->kalmanUpdate(Z);
 }
 
 /**
@@ -74,7 +84,7 @@ void RadarTracker::trace_update_physical(float new_len, float new_wid,
  * @param {bool} matchedFlag
  * @return {*}
  */
-void RadarTracker::manager(bool matchedFlag) {
+void RadarTracker::trace_management(bool matchedFlag) {
   trace_manager.age++;
 
   if (matchedFlag) {

@@ -37,6 +37,10 @@ class basicKalmanFilter {
 
   // 计算量测与预测的马氏距离
   virtual T computeMahalanobis(Eigen::Matrix<T, z_dim, 1> newZ) {
+    std::cout << "S.inverse() : \n"
+              << S.inverse() << "P.inverse() : \n"
+              << P << std::endl;
+
     T distance = sqrt((newZ - Zpre).transpose() * S.inverse() * (newZ - Zpre));
     return distance;
   }

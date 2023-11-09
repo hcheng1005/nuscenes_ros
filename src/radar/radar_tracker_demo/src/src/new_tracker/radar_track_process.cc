@@ -1,6 +1,7 @@
+#include "radar_track_process.h"
+
 #include "../../include/common/lshape.h"
 #include "match.h"
-#include "radar_track_process.h"
 
 // OPENCV
 #include <opencv2/core/core.hpp>
@@ -117,16 +118,29 @@ void RadarTrackAlgProcess::genMatchedBoxes(
 
       // 航迹状态更新
       subTrace = radarTraceTable.at(traceIdx);
-      Eigen::VectorXf Z(3);
-      Z << matchedBox.center_lat, matchedBox.center_long, matchedBox.vr;
+      // Eigen::VectorXf Z(3);
+      // Z << matchedBox.center_lat, matchedBox.center_long, matchedBox.vr;
+      // subTrace->trace_update_kinematic_measCenter(Z);
 
-      subTrace->trace_update_kinematic(Z);
+      Eigen::MatrixXf ySet = Eigen::MatrixXf(subRadarDets.size(), 3);
+      uint idx = 0;
+      for (const auto &subDet : subRadarDets) {
+        ySet(idx, 0) = subDet.y_cc;
+        ySet(idx, 1) = subDet.x_cc;
+        ySet(idx, 2) = subDet.vr;
+
+        // std::cout << ySet(idx, 0) << ", " << ySet(idx, 1) << std::endl;
+        idx++;
+      }
+
+      subTrace->trace_update_kinematic_measSet(ySet);
+
       subTrace->trace_update_physical(matchedBox.length, matchedBox.width,
                                       0.0);  // TODO DONT CARE THETA??
-      subTrace->manager(true);
+      subTrace->trace_management(true);
     } else {
       subTrace = radarTraceTable.at(traceIdx);
-      subTrace->manager(false);
+      subTrace->trace_management(false);
     }
 
     traceIdx++;
@@ -144,16 +158,11 @@ void RadarTrackAlgProcess::genFinlalMatchedBox(
   // box fitting
   Eigen::MatrixXd point = Eigen::MatrixXd(RadarDets.size(), 3);
 
-  // std::cout << "..................................." << std::endl;
-
   uint idx = 0;
   for (const auto &subDet : RadarDets) {
     point(idx, 0) = subDet.x_cc;
     point(idx, 1) = subDet.y_cc;
     point(idx, 2) = subDet.vr;
-
-    // std::cout << "idx: " << idx << ", " << point(idx, 0) << ", " <<
-    // point(idx, 1) << std::endl;
     idx++;
   }
 
@@ -166,9 +175,9 @@ void RadarTrackAlgProcess::genFinlalMatchedBox(
   matchedBox.length = maxVal[0] - minVal[0];
   matchedBox.width = maxVal[1] - minVal[1];
 
-  // std::cout << matchedBox.center_lat << ", " << matchedBox.center_long <<
-  // std::endl; std::cout << matchedBox.length << ", " << matchedBox.width <<
-  // std::endl;
+  // std::cout << matchedBox.center_lat << ", " << matchedBox.center_long
+  //           << std::endl;
+  // std::cout << matchedBox.length << ", " << matchedBox.width << std::endl;
 
   // Rect_t matchedBox = L_shape_Fit_Proc(point, 0.0, M_PI_2, M_PI_2 / 45.0);
   // traceMatchBoxes.push_back(matchedBox);
@@ -421,10 +430,10 @@ void RadarTrackAlgProcess::genCostMatrixMahalanobis(
     for (auto &subTrace : radarTraceTable) {
       float distance = subTrace->randomMatriceFilter->computeMahalanobis(newZ);
 
-      // Eigen::VectorXf ZPre = subTrace->randomMatriceFilter->GetZPre();
+      Eigen::VectorXf ZPre = subTrace->randomMatriceFilter->GetZPre();
 
-      // std::cout << "diff: " << (newZ - ZPre).transpose()
-      //           << " maha: " << distance << std::endl;
+      std::cout << "diff: " << (newZ - ZPre).transpose()
+                << " maha: " << distance << std::endl;
 
       subCostMatrix.push_back(distance);
     }
