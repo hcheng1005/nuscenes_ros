@@ -39,8 +39,8 @@ include_directories(SYSTEM
                     ${OpenCV_INCLUDE_DIRS})
 
 include_directories(include)
-include_directories(/home/zdhjs-05/myGitHubCode/nuscenes2bag-master/wk_spc/src/include/)
-# include_directories(/home/charles/myCode/nus_ros/src/nuscenes_ros/include/)
+# include_directories(/home/zdhjs-05/myGitHubCode/nuscenes2bag-master/wk_spc/src/include/)
+include_directories(/home/charles/myCode/nus_ros/src/nuscenes_ros/include/)
 
 
 # set(SRCS
@@ -48,14 +48,15 @@ include_directories(/home/zdhjs-05/myGitHubCode/nuscenes2bag-master/wk_spc/src/i
 #     src/DBSCAN.cc)
 
 file(GLOB_RECURSE SOURCE_FILES 
-  src/main.cpp
+  # src/main.cpp
   src/tracker/*.cc
   src/new_tracker/*.cc
   include/common/*.cc
   include/common/*.cpp
 )
 
-add_executable(${PROJECT_NAME} ${SOURCE_FILES} src/main.cpp)
+# add_executable(${PROJECT_NAME} ${SOURCE_FILES} src/main.cpp)
+add_executable(${PROJECT_NAME} ${SOURCE_FILES} src/new_tracker/randomMatriceTest.cc)
 
 target_compile_options(${PROJECT_NAME}
                        PRIVATE

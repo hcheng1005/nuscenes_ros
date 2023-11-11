@@ -57,7 +57,7 @@ class RandomMatriceFilter : public basicKalmanFilter<T, x_dim, z_dim> {
    * @return {*}
    */
   void Set_F() override {
-    const T dt = 0.075;
+    const T dt = 0.1;
     this->F = this->F.setIdentity();
     this->F(iDistLat, iVrelLat) = dt;
     this->F(iDistLat, iAccLat) = 0.5 * dt * dt;
@@ -74,8 +74,8 @@ class RandomMatriceFilter : public basicKalmanFilter<T, x_dim, z_dim> {
    * @return {*}
    */
   void Set_Q() override {
-    Eigen::Matrix<T, x_dim, z_dim> G;
-    Eigen::Matrix<T, z_dim, z_dim> q;
+    Eigen::Matrix<T, x_dim, 2> G;
+    Eigen::Matrix<T, 2, 2> q;
 
     T dt = 0.1;
     T dt3 = powf(dt, 3.0);
@@ -106,17 +106,17 @@ class RandomMatriceFilter : public basicKalmanFilter<T, x_dim, z_dim> {
         0.0, std::pow(0.2, 2.0);
   };
 
-  void SetSPDMat() { SPD_Mat = SPD_Mat.setOnes() * pow(0.5, 2.0); }
+  void SetSPDMat() { SPD_Mat = SPD_Mat.setIdentity() * pow(1.0, 2.0); }
 
   void getObjectShape(T* len, T* wid, T* theta) {}
 
  private:
   // vari for extendsion
-  Eigen::Matrix<T, 2, 2> SPD_Mat;
+  Eigen::Matrix<T, 3, 3> SPD_Mat;
   T alpha_ = 2.0;
   T tau_ = 1.0;
 
-  T std_accLong_ = 0.4, std_accLat_ = 0.4;  // ACC NOISE
+  T std_accLong_ = 1, std_accLat_ = 1;  // ACC NOISE
 
  private:
   /**
@@ -137,7 +137,7 @@ class RandomMatriceFilter : public basicKalmanFilter<T, x_dim, z_dim> {
 
     Eigen::Matrix<T, z_dim, 2> H_new = this->H.block(0, 0, 3, 2);
     Eigen::Matrix<T, z_dim, z_dim> SPMMat2 =
-        H_new * SPD_Mat * H_new.transpose();
+        SPD_Mat;  // H_new * SPD_Mat * H_new.transpose();
 
     this->S = this->H * this->P * this->H.transpose() + 1.2 * SPMMat2 + this->R;
     this->K = this->P * this->H.transpose() * this->S.inverse();
@@ -150,7 +150,7 @@ class RandomMatriceFilter : public basicKalmanFilter<T, x_dim, z_dim> {
    */
   void predictExtendState()  // extension info
   {
-    const T dt = 0.075;
+    const T dt = 0.1;
 
     // X_ex keep the same
     alpha_ = 2.0 + exp(-dt / tau_) * (alpha_ - 2.0);
@@ -200,13 +200,15 @@ class RandomMatriceFilter : public basicKalmanFilter<T, x_dim, z_dim> {
 
     // compute kalman S and K
     Eigen::Matrix<T, z_dim, 2> H_new = this->H.block(0, 0, 3, 2);
-    Eigen::Matrix<T, z_dim, z_dim> SPMMat2 =
-        H_new * SPD_Mat * H_new.transpose();
+    Eigen::Matrix<T, z_dim, z_dim> SPMMat2 = SPD_Mat;
+    // H_new* SPD_Mat* H_new.transpose();
 
     Eigen::Matrix<T, z_dim, z_dim> Yk = 1.2 * SPMMat2 + this->R;
 
     Eigen::Matrix<T, z_dim, z_dim> S =
         this->H * this->P * this->H.transpose() + Yk / meas_num;
+
+    // std::cout << "measNum: " << meas_num << std::endl;
 
     // Eigen::Matrix<T, z_dim, z_dim> S =
     //     this->H * this->P * this->H.transpose() + this->R;
@@ -214,18 +216,20 @@ class RandomMatriceFilter : public basicKalmanFilter<T, x_dim, z_dim> {
     Eigen::Matrix<T, x_dim, z_dim> K =
         this->P * this->H.transpose() * S.inverse();
 
-    std::cout << "X1 \n" << this->X.transpose() << std::endl;
-    std::cout << "Diff: \n" << (y_hat - this->Zpre).transpose() << std::endl;
+    // std::cout << "X1 \n" << this->X.transpose() << std::endl;
+    // std::cout << "Diff: \n" << (y_hat - this->Zpre).transpose() << std::endl;
+    // std::cout << "gain: \n"
+    //           << (K * (y_hat - this->Zpre)).transpose() << std::endl;
 
     // std::cout << "P: \n" << this->P << std::endl;
-    // std::cout << "H: \n" << this->H << std::endl;
+    // // std::cout << "H: \n" << this->H << std::endl;
     // std::cout << "S: \n" << S << std::endl;
     // std::cout << "K: \n" << K << std::endl;
 
     this->X = this->X + K * (y_hat - this->Zpre);
     this->P = this->P - K * this->H * this->P;
 
-    std::cout << "X2 \n" << this->X.transpose() << std::endl;
+    // std::cout << "X2 \n" << this->X.transpose() << std::endl;
   }
 
   /**
@@ -242,22 +246,23 @@ class RandomMatriceFilter : public basicKalmanFilter<T, x_dim, z_dim> {
       return;
     }
 
+    // 量测均值
     Eigen::Matrix<T, 1, z_dim> y_hat = meas_mat.colwise().mean();
     Eigen::Matrix<T, z_dim, 1> y_hat_vet = y_hat.transpose();
 
-    Eigen::Matrix<T, 1, z_dim> Z_mean(
-        Eigen::Matrix<T, 1, z_dim>::Map(y_hat_vet.data(), meas_mat.cols()));
-
-    auto ZK = meas_mat.rowwise() - Z_mean;
-
+    auto ZK = meas_mat.rowwise() - y_hat;
     Eigen::Matrix<T, z_dim, z_dim> Yhat = (ZK.adjoint() * ZK) / (meas_num - 1);
 
     // compute kalman S and K
     Eigen::Matrix<T, z_dim, 2> H_new = this->H.block(0, 0, 3, 2);
     Eigen::Matrix<T, z_dim, z_dim> SPMMat2 =
-        H_new * SPD_Mat * H_new.transpose();
+        SPD_Mat;  //    H_new* SPD_Mat* H_new.transpose();
 
-    Eigen::Matrix<T, z_dim, z_dim> Yk = 0.9 * SPMMat2 + this->R;
+    // std::cout << "H: \n" << this->H << std::endl;
+
+    // std::cout << "H_new: \n" << H_new << std::endl;
+
+    Eigen::Matrix<T, z_dim, z_dim> Yk = SPMMat2 + this->R;
 
     Eigen::Matrix<T, z_dim, z_dim> S =
         this->H * this->P * this->H.transpose() + Yk / meas_num;
@@ -266,33 +271,106 @@ class RandomMatriceFilter : public basicKalmanFilter<T, x_dim, z_dim> {
         (y_hat_vet - this->H * this->X) *
         ((y_hat_vet - this->H * this->X).transpose());
 
-    Eigen::Matrix<T, z_dim, z_dim> X_chol = SPMMat2.ldlt().matrixL();
+    Eigen::Matrix<T, z_dim, z_dim> X_chol = SPMMat2.llt().matrixL();
+    // matSquare(SPMMat2);
 
-    Eigen::Matrix<T, z_dim, z_dim> S_chol = S.ldlt().matrixL();
+    // std::cout << "SPMMat2: \n" << SPMMat2 << std::endl;
+    // std::cout << "X_chol: \n" << X_chol << std::endl;
+    // std::cout << "X_chol: \n" << X_chol * X_chol.transpose() << std::endl;
 
-    Eigen::Matrix<T, z_dim, z_dim> Yk_chol = Yk.ldlt().matrixL();
+    Eigen::Matrix<T, z_dim, z_dim> S_chol = S.llt().matrixL();
+    matSquare(S);
+    std::cout << "S: \n" << S << std::endl;
+    std::cout << "S_chol: \n" << S_chol << std::endl;
+    std::cout << "S_chol: \n" << S_chol * S_chol.transpose() << std::endl;
 
-    Eigen::Matrix<T, z_dim, z_dim> N_hat = X_chol * S_chol.inverse() * N_ *
-                                           S_chol.inverse().transpose() *
-                                           X_chol.transpose();
+    Eigen::Matrix<T, z_dim, z_dim> Yk_chol = Yk.llt().matrixL();
 
-    Eigen::Matrix<T, z_dim, z_dim> Y_hat = X_chol * Yk_chol.inverse() * Yhat *
-                                           Yk_chol.inverse().transpose() *
-                                           X_chol.transpose();
+    // std::cout << "Yk: \n" << Yk << std::endl;
+    // std::cout << "Yk_chol: \n" << Yk_chol << std::endl;
+    // std::cout << "Yk_chol: \n" << Yk_chol * Yk_chol.transpose() << std::endl;
 
+    Eigen::Matrix<T, z_dim, z_dim> N_chol = N_.llt().matrixL();
+    std::cout << "X_chol: \n" << X_chol << std::endl;
+    std::cout << "S_chol.inverse(): \n" << S_chol.inverse() << std::endl;
+    std::cout << "N_chol: \n" << N_chol << std::endl;
+    std::cout << "X_chol.inverse(): \n" << X_chol.inverse() << std::endl;
+
+    Eigen::Matrix<T, z_dim, 1> bold_dot =
+        S_chol.inverse() * (y_hat_vet - this->H * this->X);
+    Eigen::Matrix<T, z_dim, z_dim> N_hat =
+        X_chol * bold_dot * ((X_chol * bold_dot).transpose());
+
+    Eigen::Matrix<T, z_dim, z_dim> Y_hat =
+        X_chol * Yk_chol.inverse() * Yhat *
+        ((X_chol * Yk_chol.inverse()).transpose());
+
+    // std::cout << "SPMMat2 Matrice: \n" << SPMMat2 << std::endl;
     SPMMat2 = 1.0 / (alpha_ + meas_num) * (alpha_ * SPMMat2 + N_hat + Y_hat);
+    std::cout << "N_hat: \n" << N_hat << std::endl;
+    std::cout << "Y_hat: \n" << Y_hat << std::endl;
+    // std::cout << "alpha_: \n" << alpha_ << std::endl;
+    // std::cout << "SPMMat2 Matrice: \n" << SPMMat2 << std::endl;
 
-    // 构造伪逆矩阵
-    Eigen::MatrixXf H_inv = computPseudoInverse(H_new);
-    Eigen::MatrixXf HT_inv = computPseudoInverse(H_new.transpose());
+    // // 构造伪逆矩阵
+    // Eigen::MatrixXf H_inv = computPseudoInverse(H_new);
+    // Eigen::MatrixXf HT_inv = computPseudoInverse(H_new.transpose());
 
-    SPD_Mat = H_inv * SPMMat2 * HT_inv;
+    SPD_Mat = SPMMat2;  // H_inv * SPMMat2 * HT_inv;
 
     alpha_ = alpha_ + meas_num;
 
-    std::cout << "SPD Matrice:" << SPD_Mat << std::endl;
+    // std::cout << "SPD Matrice: \n" << SPD_Mat << std::endl;
+
+    getShapeValue(SPD_Mat);
   }
 
+  void matSquare(const Eigen::Matrix<T, -1, -1> AA) {
+    // Eigen::LLT<Eigen::MatrixXf> lltOfA(A);  // Cholesky分解
+
+    // if (lltOfA.info() == Eigen::Success) {
+    //   Eigen::MatrixXf B = lltOfA.matrixL();  // 获取Cholesky分解的下三角矩阵
+
+    //   std::cout << "Matrix B:" << std::endl;
+    //   std::cout << B << std::endl;
+    // } else {
+    //   std::cout << "Cholesky decomposition failed!" << std::endl;
+    // }
+
+    Eigen::MatrixXf A(3, 3);  // 假设有一个3x3的对称正定矩阵A
+    A << 4, 2, 1, 2, 5, 3, 1, 3, 6;
+
+    Eigen::LLT<Eigen::MatrixXf> lltOfA(AA);  // Cholesky分解
+
+    if (lltOfA.info() == Eigen::Success) {
+      Eigen::MatrixXf B = lltOfA.matrixL();  // 获取Cholesky分解的下三角矩阵
+
+      std::cout << "Matrix B:" << std::endl;
+      std::cout << B << std::endl;
+      std::cout << B * B.transpose() << std::endl;
+    } else {
+      std::cout << "Cholesky decomposition failed!" << std::endl;
+    }
+  }
+
+  void getShapeValue(const Eigen::Matrix<T, -1, -1> mat) {
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXf> eigensolver(mat);
+    if (eigensolver.info() != Eigen::Success) {
+      std::cerr << "Eigen solver failed!" << std::endl;
+      return;
+    }
+
+    Eigen::VectorXf eigenvalues = eigensolver.eigenvalues();
+    std::cout << "Eigenvalues:" << std::endl;
+    std::cout << eigenvalues << std::endl;
+  }
+
+  /**
+   * @names: computPseudoInverse
+   * @description: 求解伪逆矩阵
+   * @param {MatrixXf} A
+   * @return {*}
+   */
   Eigen::MatrixXf computPseudoInverse(Eigen::MatrixXf A) {
     Eigen::JacobiSVD<Eigen::MatrixXf> svd(
         A, Eigen::ComputeThinU | Eigen::ComputeThinV);
