@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: MIT
+ * SPDX-FileCopyrightText: Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES.
+ * All rights reserved. SPDX-License-Identifier: MIT
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -20,25 +20,26 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
- 
+
 #ifndef TENSORRT_HPP
 #define TENSORRT_HPP
 
-#include <string>
 #include <memory>
+#include <string>
 #include <vector>
 
-namespace TensorRT{
+namespace TensorRT {
 
-    class Engine{
-    public:
-        virtual int64_t getBindingNumel(const std::string& name) = 0;
-        virtual std::vector<int64_t> getBindingDims(const std::string& name) = 0;
-        virtual bool forward(const std::initializer_list<void*>& buffers, void* stream = nullptr) = 0;
-        virtual void print() = 0;
-    };
-
-    std::shared_ptr<Engine> load(const std::string& file);
+class Engine {
+ public:
+  virtual int64_t getBindingNumel(const std::string& name) = 0;
+  virtual std::vector<int64_t> getBindingDims(const std::string& name) = 0;
+  virtual bool forward(const std::initializer_list<void*>& buffers,
+                       void* stream = nullptr) = 0;
+  virtual void print() = 0;
 };
 
-#endif // TENSORRT_HPP
+std::shared_ptr<Engine> load(const std::string& file);
+};  // namespace TensorRT
+
+#endif  // TENSORRT_HPP

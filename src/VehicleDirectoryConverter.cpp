@@ -1,12 +1,13 @@
 #include "nuscenes2bag/VehicleDirectoryConverter.hpp"
-#include "nuscenes2bag/utils.hpp"
+
 #include <thread>
+
+#include "nuscenes2bag/utils.hpp"
 
 namespace nuscenes2bag {
 
-boost::optional<nav_msgs::Odometry>
-readVehicleFile(const VehicleData& vehicleData) noexcept
-{
+boost::optional<nav_msgs::Odometry> readVehicleFile(
+    const VehicleData& vehicleData) noexcept {
   try {
     nav_msgs::Odometry msg;
     msg.header = std_msgs::Header();
@@ -26,4 +27,4 @@ readVehicleFile(const VehicleData& vehicleData) noexcept
   return boost::none;
 }
 
-}
+}  // namespace nuscenes2bag

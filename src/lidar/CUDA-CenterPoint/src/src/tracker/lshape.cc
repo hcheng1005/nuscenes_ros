@@ -176,7 +176,8 @@ void calc_rect_contour(Rect_t &rect) {
   } else {
     rect.length = temp_wid;
     rect.width = temp_len;
-    rect.theta = (rect.theta >= 0.0) ? (M_PI_2 - rect.theta) : (-M_PI_2 - rect.theta);
+    rect.theta =
+        (rect.theta >= 0.0) ? (M_PI_2 - rect.theta) : (-M_PI_2 - rect.theta);
   }
 }
 
@@ -242,7 +243,7 @@ Rect_t L_shape_Fit_Proc(const Eigen::MatrixXd point, const double theta_) {
 
   double theta_start = -theta_ - M_PI_2 / 90.0;  // 30°
   double theta_end = -theta_ + M_PI_2 / 90.0;    // 30°
-  double step_ = (M_PI_2 / 90.0);              // 3°
+  double step_ = (M_PI_2 / 90.0);                // 3°
 
   while (theta_start <= theta_end) {
     // double temp_angle = step * ANGLE_STEP;

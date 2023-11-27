@@ -1,21 +1,18 @@
 #include "nuscenes2bag/RadarDirectoryConverter.hpp"
 
-
 using namespace sensor_msgs;
 using namespace std;
 using namespace nuscenes2bag;
 
 namespace nuscenes2bag {
 
-boost::optional<RadarObjects>
-readRadarFile(const fs::path& filePath)
-{
+boost::optional<RadarObjects> readRadarFile(const fs::path& filePath) {
   const auto fileName = filePath.string();
   pcl::PointCloud<PclRadarObject>::Ptr cloud(
-    new pcl::PointCloud<PclRadarObject>);
+      new pcl::PointCloud<PclRadarObject>);
 
   if (pcl::io::loadPCDFile<PclRadarObject>(fileName, *cloud) ==
-      -1) //* load the file
+      -1)  //* load the file
   {
     std::string error = "Could not read ";
     error += fileName;
@@ -52,9 +49,7 @@ readRadarFile(const fs::path& filePath)
   return boost::optional<RadarObjects>(radarObjects);
 }
 
-inline void
-fillFieldsForPointcloudXYZIR(std::vector<PointField>& fields)
-{
+inline void fillFieldsForPointcloudXYZIR(std::vector<PointField>& fields) {
   PointField field;
   field.datatype = sensor_msgs::PointField::FLOAT32;
   field.offset = 0;
@@ -91,17 +86,14 @@ fillFieldsForPointcloudXYZIR(std::vector<PointField>& fields)
   fields.push_back(field);
 }
 
-
 // Convert float32 to 4 bytes
-union
-{
+union {
   float value;
   uint8_t byte[4];
 } floatToBytes;
 
-inline void
-push_back_float32_XYZIR(std::vector<uint8_t>& data, float float_data)
-{
+inline void push_back_float32_XYZIR(std::vector<uint8_t>& data,
+                                    float float_data) {
   floatToBytes.value = float_data;
   data.push_back(floatToBytes.byte[0]);
   data.push_back(floatToBytes.byte[1]);
@@ -109,15 +101,14 @@ push_back_float32_XYZIR(std::vector<uint8_t>& data, float float_data)
   data.push_back(floatToBytes.byte[3]);
 }
 
-boost::optional<sensor_msgs::PointCloud2>
-readRadarFile2PCLXYZ(const fs::path& filePath)
-{
+boost::optional<sensor_msgs::PointCloud2> readRadarFile2PCLXYZ(
+    const fs::path& filePath) {
   const auto fileName = filePath.string();
   pcl::PointCloud<PclRadarObject>::Ptr cloud(
-    new pcl::PointCloud<PclRadarObject>);
+      new pcl::PointCloud<PclRadarObject>);
 
   if (pcl::io::loadPCDFile<PclRadarObject>(fileName, *cloud) ==
-      -1) //* load the file
+      -1)  //* load the file
   {
     std::string error = "Could not read ";
     error += fileName;
@@ -130,7 +121,7 @@ readRadarFile2PCLXYZ(const fs::path& filePath)
   PointCloud2 cloud_msg;
   cloud_msg.header.frame_id = std::string("radar");
   cloud_msg.is_bigendian = false;
-  cloud_msg.point_step = sizeof(float) * 5; // Length of each point in bytes
+  cloud_msg.point_step = sizeof(float) * 5;  // Length of each point in bytes
   cloud_msg.height = 1;
   cloud_msg.is_dense = true;
 
@@ -166,10 +157,10 @@ readRadarFile2PCLXYZ(const fs::path& filePath)
 
   fillFieldsForPointcloudXYZIR(cloud_msg.fields);
   cloud_msg.data = data;
-  cloud_msg.row_step = data.size(); // Length of row in bytes
+  cloud_msg.row_step = data.size();  // Length of row in bytes
 
   // return boost::optional<RadarObjects>(radarObjects);
-  return boost::optional<sensor_msgs::PointCloud2>(cloud_msg); 
+  return boost::optional<sensor_msgs::PointCloud2>(cloud_msg);
 }
 
-}
+}  // namespace nuscenes2bag

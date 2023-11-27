@@ -1,12 +1,12 @@
 #include "../include/nuscenes2bag/ImuDirectoryConverter.hpp"
-#include "nuscenes2bag/utils.hpp"
+
 #include <thread>
+
+#include "nuscenes2bag/utils.hpp"
 
 namespace nuscenes2bag {
 
-boost::optional<sensor_msgs::Imu>
-readImuFile(const ImuData& imuData) noexcept
-{
+boost::optional<sensor_msgs::Imu> readImuFile(const ImuData& imuData) noexcept {
   try {
     sensor_msgs::Imu msg;
     msg.header = std_msgs::Header();
@@ -30,4 +30,4 @@ readImuFile(const ImuData& imuData) noexcept
   return boost::none;
 }
 
-}
+}  // namespace nuscenes2bag

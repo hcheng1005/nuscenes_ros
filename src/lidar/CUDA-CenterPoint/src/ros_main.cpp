@@ -6,12 +6,10 @@ using namespace sensor_msgs;
 ros::Publisher det_array_pub_;
 ros::Publisher trace_array_pub_;
 
-
 std::string Model_File =
-"/data/chenghao/mycode/nuscenes2bag-master/wk_spc/src/src/lidar/"
-"CUDA-CenterPoint/src/model/centerpoint_rpn.plan";
+    "/data/chenghao/mycode/nuscenes2bag-master/wk_spc/src/src/lidar/"
+    "CUDA-CenterPoint/src/model/centerpoint_rpn.plan";
 std::string Save_Dir = "../data/prediction/";
-
 
 // 检测器
 CenterPoint* centerpoint;
@@ -28,8 +26,7 @@ cudaStream_t stream = NULL;
  * @description: Briefly describe the function of your function
  * @return {*}
  */
-void centerpoint_init(void)
-{
+void centerpoint_init(void) {
   cudaDeviceProp prop;
 
   int count = 0;
@@ -45,14 +42,10 @@ void centerpoint_init(void)
     printf("  SM in a block: %luKB\n", prop.sharedMemPerBlock >> 10);
     printf("  warp size: %d\n", prop.warpSize);
     printf("  threads in a block: %d\n", prop.maxThreadsPerBlock);
-    printf("  block dim: (%d,%d,%d)\n",
-      prop.maxThreadsDim[0],
-      prop.maxThreadsDim[1],
-      prop.maxThreadsDim[2]);
-    printf("  grid dim: (%d,%d,%d)\n",
-      prop.maxGridSize[0],
-      prop.maxGridSize[1],
-      prop.maxGridSize[2]);
+    printf("  block dim: (%d,%d,%d)\n", prop.maxThreadsDim[0],
+           prop.maxThreadsDim[1], prop.maxThreadsDim[2]);
+    printf("  grid dim: (%d,%d,%d)\n", prop.maxGridSize[0], prop.maxGridSize[1],
+           prop.maxGridSize[2]);
   }
   printf("\n");
 
@@ -63,7 +56,7 @@ void centerpoint_init(void)
   centerpoint->prepare();
 
   checkCudaErrors(cudaMalloc(
-    (void**)&d_points, MAX_POINTS_NUM * params.feature_num * sizeof(float)));
+      (void**)&d_points, MAX_POINTS_NUM * params.feature_num * sizeof(float)));
 }
 
 /**
@@ -71,8 +64,7 @@ void centerpoint_init(void)
  * @description: Briefly describe the function of your function
  * @return {*}
  */
-void centerpoint_die(void)
-{
+void centerpoint_die(void) {
   checkCudaErrors(cudaFree(d_points));
   checkCudaErrors(cudaStreamDestroy(stream));
 }
@@ -82,8 +74,7 @@ void centerpoint_die(void)
  * @description: Briefly describe the function of your function
  * @return {*}
  */
-void pub_det_boxes(std::vector<Bndbox> boxes)
-{
+void pub_det_boxes(std::vector<Bndbox> boxes) {
   std::cout << "boxes number: " << boxes.size() << std::endl;
 
   visualization_msgs::MarkerArray marker_array;
@@ -91,8 +82,7 @@ void pub_det_boxes(std::vector<Bndbox> boxes)
 
   uint32_t shape = visualization_msgs::Marker::CUBE;
   uint32_t id = 0;
-  for (auto box : boxes)
-  {
+  for (auto box : boxes) {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "lidar_top";
     marker.header.stamp = ros::Time::now();
@@ -126,14 +116,12 @@ void pub_det_boxes(std::vector<Bndbox> boxes)
   det_array_pub_.publish(marker_array);
 }
 
-
 /**
  * @names:
  * @description: Briefly describe the function of your function
  * @return {*}
  */
-void pub_trace_boxes(std::vector<simple_tracker> track_list)
-{
+void pub_trace_boxes(std::vector<simple_tracker> track_list) {
   std::cout << "trace number: " << track_list.size() << std::endl;
 
   visualization_msgs::MarkerArray marker_array;
@@ -141,10 +129,8 @@ void pub_trace_boxes(std::vector<simple_tracker> track_list)
 
   uint32_t shape = visualization_msgs::Marker::CUBE;
   uint32_t id = 0;
-  for (auto trace : track_list)
-  {
-    if (trace.track_manage.track_status != TRK_Confirmed)
-    {
+  for (auto trace : track_list) {
+    if (trace.track_manage.track_status != TRK_Confirmed) {
       continue;
     }
     visualization_msgs::Marker marker;
@@ -180,20 +166,18 @@ void pub_trace_boxes(std::vector<simple_tracker> track_list)
   trace_array_pub_.publish(marker_array);
 }
 
-
 /**
  * @names:
  * @description: Briefly describe the function of your function
  * @param {PointCloud2ConstPtr&} msg
  * @return {*}
  */
-void lidar_callback(const sensor_msgs::PointCloud2ConstPtr& msg)
-{
+void lidar_callback(const sensor_msgs::PointCloud2ConstPtr& msg) {
   std::cout << msg->header.stamp << ": "
-    << " ---------- Rec new Msg: [Lidar TOP] ---------- " << std::endl;
+            << " ---------- Rec new Msg: [Lidar TOP] ---------- " << std::endl;
 
   pcl::PointCloud<pcl::PointXYZI>::Ptr pcl_pc_ptr(
-    new pcl::PointCloud<pcl::PointXYZI>);
+      new pcl::PointCloud<pcl::PointXYZI>);
   pcl::fromROSMsg(*msg, *pcl_pc_ptr);
 
   int length = pcl_pc_ptr->size();
@@ -210,7 +194,7 @@ void lidar_callback(const sensor_msgs::PointCloud2ConstPtr& msg)
   }
 
   checkCudaErrors(
-    cudaMemcpy(d_points, pc_data, length * 5, cudaMemcpyHostToDevice));
+      cudaMemcpy(d_points, pc_data, length * 5, cudaMemcpyHostToDevice));
 
   std::cout << "start infer " << std::endl;
 
@@ -225,11 +209,7 @@ void lidar_callback(const sensor_msgs::PointCloud2ConstPtr& msg)
   pub_trace_boxes(tracker.track_list);
 }
 
-
-void imu_callback(sensor_msgs::IMU)
-{
-
-}
+void imu_callback(sensor_msgs::IMU) {}
 
 /**
  * @names:
@@ -238,17 +218,20 @@ void imu_callback(sensor_msgs::IMU)
  * @param {char*} argv
  * @return {*}
  */
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
   ros::init(argc, argv, "nus_lidar");
   ros::NodeHandle lidar_top_rec_node, imu_rec_node;
   ros::NodeHandle det_node, trace_node;
-  ros::Subscriber point_sub = lidar_top_rec_node.subscribe("/lidar_top", 1, lidar_callback); // 接收点云msg
-  ros::Subscriber imu_sub = imu_rec_node.subscribe("/imu", 1, imu_callback); // 接收点云msg
+  ros::Subscriber point_sub = lidar_top_rec_node.subscribe(
+      "/lidar_top", 1, lidar_callback);  // 接收点云msg
+  ros::Subscriber imu_sub =
+      imu_rec_node.subscribe("/imu", 1, imu_callback);  // 接收点云msg
 
   // 检测结果可视化
-  det_array_pub_ = det_node.advertise<visualization_msgs::MarkerArray>("det", 100);
-  trace_array_pub_ = trace_node.advertise<visualization_msgs::MarkerArray>("trace", 100);
+  det_array_pub_ =
+      det_node.advertise<visualization_msgs::MarkerArray>("det", 100);
+  trace_array_pub_ =
+      trace_node.advertise<visualization_msgs::MarkerArray>("trace", 100);
 
   centerpoint_init();
 

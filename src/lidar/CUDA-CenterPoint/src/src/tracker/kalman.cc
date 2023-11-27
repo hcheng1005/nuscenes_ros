@@ -75,7 +75,6 @@ simple_tracker::simple_tracker(box_t &new_det, uint32_t id) {
   this->track_manage.type_manage.type_new = this->track_manage.type_manage.type;
   this->track_manage.type_manage.score = new_det.score;
 
-
   this->track_manage.shape4out.theta = new_det.rect.heading;
 
   if (TRACK_DEBUG) {

@@ -13,28 +13,28 @@ const double MAXNUM = 1e10;
 
 // 通过长宽信息计算2D矩形角点
 void creat_rect_box_point(const rect_basic_struct& rect_1,
-  rect_corners_struct& box_corners) {
-  double rot[4] = { cos(rect_1.heading), -1.0 * sin(rect_1.heading),
-                   sin(rect_1.heading), cos(rect_1.heading) };
-  double p1[2] = { rect_1.center_pos[1], rect_1.center_pos[0] };
+                          rect_corners_struct& box_corners) {
+  double rot[4] = {cos(rect_1.heading), -1.0 * sin(rect_1.heading),
+                   sin(rect_1.heading), cos(rect_1.heading)};
+  double p1[2] = {rect_1.center_pos[1], rect_1.center_pos[0]};
   double half_wid = 0.5 * rect_1.box_wid;
   double half_len = 0.5 * rect_1.box_len;
 
-  double pos_symbol[4][2] = { 1.0, 1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0 };
+  double pos_symbol[4][2] = {1.0, 1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0};
 
   for (uint8_t idx = 0; idx < 4; idx++) {
     // 纵向距离
     box_corners.corners[idx].x = rot[0] * pos_symbol[idx][0] * half_len +
-      rot[1] * pos_symbol[idx][1] * half_wid + p1[1];
+                                 rot[1] * pos_symbol[idx][1] * half_wid + p1[1];
 
     // 横向距离
     box_corners.corners[idx].y = rot[2] * pos_symbol[idx][0] * half_len +
-      rot[3] * pos_symbol[idx][1] * half_wid + p1[0];
+                                 rot[3] * pos_symbol[idx][1] * half_wid + p1[0];
   }
 }
 
 double intersection_area(const rect_corners_struct& box_1,
-  const rect_corners_struct& box_2) {
+                         const rect_corners_struct& box_2) {
   MyPoint p1[5], p2[5];
   for (uint8_t idx = 0; idx < 4; idx++) {
     p1[idx] = box_1.corners[idx];
@@ -121,7 +121,7 @@ double calcul_rect_area(const rect_basic_struct& r) {
 MyPoint intersection(MyPoint a, MyPoint b, MyPoint c, MyPoint d) {
   MyPoint p = a;
   double t = ((a.x - c.x) * (c.y - d.y) - (a.y - c.y) * (c.x - d.x)) /
-    ((a.x - b.x) * (c.y - d.y) - (a.y - b.y) * (c.x - d.x));
+             ((a.x - b.x) * (c.y - d.y) - (a.y - b.y) * (c.x - d.x));
   p.x += (b.x - a.x) * t;
   p.y += (b.y - a.y) * t;
   return p;
@@ -157,7 +157,7 @@ void find_convex_hull(std::vector<MyPoint> points, MyPoint p0) {
   while (i < points.size()) {
     // 如果points[i]和points[i-1]在同一个角度，则不再对points[i]进行计算
     if ((points.at(i - 1).y - p0.y) * (points.at(i).x - p0.x) ==
-      (points.at(i - 1).x - p0.x) * (points.at(i).y - p0.y)) {
+        (points.at(i - 1).x - p0.x) * (points.at(i).y - p0.y)) {
       i++;
       continue;
     }
@@ -176,7 +176,7 @@ void find_convex_hull(std::vector<MyPoint> points, MyPoint p0) {
       while (1) {
         if (convex_hull.size() == 2) {
           std::cout << "-------------------convex_hull.size() == "
-            "2-------------------";
+                       "2-------------------";
           return;
         }
         // 假设现在栈中为a,b,c,d,cross(c,d,e)小于0
@@ -204,8 +204,7 @@ void find_p0(MyPoint& p0, std::vector<MyPoint>& points) {
   for (uint i = 1; i < points.size(); i++) {
     if (points.at(i).y < p0.y) {
       p0 = points.at(i);
-    }
-    else if (points.at(i).y == p0.y) {
+    } else if (points.at(i).y == p0.y) {
       if (points.at(i).x < p0.x) {
         p0 = points.at(i);
       }
@@ -234,14 +233,13 @@ bool cmp_(MyPoint& p1, MyPoint& p2) {
       return true;
     else
       return false;
-  }
-  else
+  } else
     return false;
 }
 
 // 根据
 double compute_convexHullArea(const rect_corners_struct& r1,
-  const rect_corners_struct& r2) {
+                              const rect_corners_struct& r2) {
   // std::vector<MyPoint> point_list;
 
   // for (uint8_t idx = 0; idx < 4; idx++) {
@@ -274,16 +272,10 @@ double compute_convexHullArea(const rect_corners_struct& r1,
 
   // return ares_;
 
-      // a new way to compute convexHullArea
-  std::vector<MyPoint> points = {
-        r1.corners[0],
-        r1.corners[1],
-        r1.corners[2],
-        r1.corners[3],
-        r2.corners[0],
-        r2.corners[1],
-        r2.corners[2],
-        r2.corners[3] };
+  // a new way to compute convexHullArea
+  std::vector<MyPoint> points = {r1.corners[0], r1.corners[1], r1.corners[2],
+                                 r1.corners[3], r2.corners[0], r2.corners[1],
+                                 r2.corners[2], r2.corners[3]};
 
   std::sort(points.begin(), points.end(), comparePoints);
   std::vector<MyPoint> hull = convexHull(points);
@@ -291,8 +283,7 @@ double compute_convexHullArea(const rect_corners_struct& r1,
   // 计算凸包的面积（假设凸包至少有三个点）
   double area = 0;
   int n = hull.size();
-  for (int i = 0; i < n - 1; ++i)
-  {
+  for (int i = 0; i < n - 1; ++i) {
     area += (hull[i].x * hull[i + 1].y - hull[i + 1].x * hull[i].y);
   }
   area += (hull[n - 1].x * hull[0].y - hull[0].x * hull[n - 1].y);
@@ -301,37 +292,29 @@ double compute_convexHullArea(const rect_corners_struct& r1,
   std::cout << "凸包的面积为：" << area << std::endl;
 }
 
-bool comparePoints(MyPoint p1, MyPoint p2)
-{
+bool comparePoints(MyPoint p1, MyPoint p2) {
   return (p1.x < p2.x) || (p1.x == p2.x && p1.y < p2.y);
 }
 
-std::vector<MyPoint> convexHull(std::vector<MyPoint> points)
-{
+std::vector<MyPoint> convexHull(std::vector<MyPoint> points) {
   int n = points.size();
-  if (n < 3)
-    return points;
+  if (n < 3) return points;
 
   std::vector<MyPoint> hull;
 
   int l = 0;
-  for (int i = 1; i < n; ++i)
-  {
-    if (points[i].x < points[l].x)
-    {
+  for (int i = 1; i < n; ++i) {
+    if (points[i].x < points[l].x) {
       l = i;
     }
   }
 
   int p = l, q;
-  do
-  {
+  do {
     hull.push_back(points[p]);
     q = (p + 1) % n;
-    for (int i = 0; i < n; ++i)
-    {
-      if (orientation(points[p], points[i], points[q]) == 2)
-      {
+    for (int i = 0; i < n; ++i) {
+      if (orientation(points[p], points[i], points[q]) == 2) {
         q = i;
       }
     }
@@ -341,12 +324,10 @@ std::vector<MyPoint> convexHull(std::vector<MyPoint> points)
   return hull;
 }
 
-int orientation(MyPoint p, MyPoint q, MyPoint r)
-{
+int orientation(MyPoint p, MyPoint q, MyPoint r) {
   double val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
-  if (val == 0)
-    return 0;             // Collinear
-  return (val > 0) ? 1 : 2; // Clockwise or Counterclockwise
+  if (val == 0) return 0;    // Collinear
+  return (val > 0) ? 1 : 2;  // Clockwise or Counterclockwise
 }
 
 /**
@@ -355,8 +336,7 @@ int orientation(MyPoint p, MyPoint q, MyPoint r)
  * @return {*}
  */
 double IOU_2D(const rect_basic_struct& rect_1,
-  const rect_basic_struct& rect_2)
-{
+              const rect_basic_struct& rect_2) {
   rect_corners_struct box_1, box_2;
 
   creat_rect_box_point(rect_1, box_1);
@@ -374,8 +354,8 @@ double IOU_2D(const rect_basic_struct& rect_1,
  * @description: Briefly describe the function of your function
  * @return {*}
  */
-double IOU_3D(const rect_basic_struct& rect_1, const rect_basic_struct& rect_2)
-{
+double IOU_3D(const rect_basic_struct& rect_1,
+              const rect_basic_struct& rect_2) {
   // 首先计算2dIOU
   rect_corners_struct box_1, box_2;
 
@@ -392,11 +372,13 @@ double IOU_3D(const rect_basic_struct& rect_1, const rect_basic_struct& rect_2)
   double z2 = rect_2.center_pos[2];
   double h2 = rect_2.box_height;
 
-  double overlap_height = std::max(0.0, std::min((z1 + h1 / 2) - (z2 - h2 / 2), (z2 + h2 / 2) - (z1 - h1 / 2)));
+  double overlap_height = std::max(
+      0.0,
+      std::min((z1 + h1 / 2) - (z2 - h2 / 2), (z2 + h2 / 2) - (z1 - h1 / 2)));
   I_ = I_ * overlap_height;
 
   double U_ = rect_1.box_len * rect_1.box_wid * rect_1.box_height +
-    rect_2.box_len * rect_2.box_wid * rect_2.box_height - I_;
+              rect_2.box_len * rect_2.box_wid * rect_2.box_height - I_;
   double iou_value = I_ / U_;
   return (iou_value >= 0) ? iou_value : 0;
 }
@@ -406,8 +388,8 @@ double IOU_3D(const rect_basic_struct& rect_1, const rect_basic_struct& rect_2)
  * @description: Briefly describe the function of your function
  * @return {*}
  */
-double GIOU_2D(const rect_basic_struct& rect_1, const rect_basic_struct& rect_2)
-{
+double GIOU_2D(const rect_basic_struct& rect_1,
+               const rect_basic_struct& rect_2) {
   rect_corners_struct box_1, box_2;
 
   creat_rect_box_point(rect_1, box_1);
@@ -415,7 +397,8 @@ double GIOU_2D(const rect_basic_struct& rect_1, const rect_basic_struct& rect_2)
 
   // compute intersection and union
   double I = intersection_area(box_1, box_2);
-  double U = rect_1.box_wid * rect_1.box_len + rect_2.box_wid * rect_1.box_len - I;
+  double U =
+      rect_1.box_wid * rect_1.box_len + rect_2.box_wid * rect_1.box_len - I;
 
   // compute the convex area
   double C = compute_convexHullArea(box_1, box_2);
@@ -429,8 +412,8 @@ double GIOU_2D(const rect_basic_struct& rect_1, const rect_basic_struct& rect_2)
  * @description: Briefly describe the function of your function
  * @return {*}
  */
-double GIOU_3D(const rect_basic_struct& rect_1, const rect_basic_struct& rect_2)
-{
+double GIOU_3D(const rect_basic_struct& rect_1,
+               const rect_basic_struct& rect_2) {
   rect_corners_struct box_1, box_2;
 
   creat_rect_box_point(rect_1, box_1);
@@ -446,18 +429,21 @@ double GIOU_3D(const rect_basic_struct& rect_1, const rect_basic_struct& rect_2)
   double h2 = rect_2.box_height;
 
   // 计算重叠高度
-  double overlap_height = std::max(0.0, std::min((z1 + h1 / 2) - (z2 - h2 / 2), (z2 + h2 / 2) - (z1 - h1 / 2)));
+  double overlap_height = std::max(
+      0.0,
+      std::min((z1 + h1 / 2) - (z2 - h2 / 2), (z2 + h2 / 2) - (z1 - h1 / 2)));
 
   // 计算重叠体积
   I = I * overlap_height;
 
   // 计算联合体积
   double U = rect_1.box_len * rect_1.box_wid * rect_1.box_height +
-    rect_2.box_len * rect_2.box_wid * rect_2.box_height - I;
+             rect_2.box_len * rect_2.box_wid * rect_2.box_height - I;
 
   // compute the convex area
   double C = compute_convexHullArea(box_1, box_2);
-  double union_height = std::max((z1 + h1 / 2) - (z2 - h2 / 2), (z2 + h2 / 2) - (z1 - h1 / 2));
+  double union_height =
+      std::max((z1 + h1 / 2) - (z2 - h2 / 2), (z2 + h2 / 2) - (z1 - h1 / 2));
   C = C * union_height;
 
   // compute giou

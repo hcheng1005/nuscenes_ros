@@ -1,36 +1,29 @@
-#include "nuscenes2bag/utils.hpp"
-#include <nuscenes2bag/MetaDataReader.hpp>
-
 #include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <nuscenes2bag/MetaDataReader.hpp>
 #include <regex>
+
+#include "nuscenes2bag/utils.hpp"
 
 using namespace std;
 namespace json = nlohmann;
 
 namespace nuscenes2bag {
 
-template<typename T>
-void
-throwKeyNotFound(const T& key, const char* msg)
-{
+template <typename T>
+void throwKeyNotFound(const T& key, const char* msg) {
   std::string errorMsg = "MetaDataError: ";
   errorMsg += msg;
   errorMsg += " [" + key + "]";
   throw InvalidMetaDataException(errorMsg);
 }
 
-template<template<class, class, class...> class Container,
-         class Key,
-         class Value,
-         class... TArgs>
-const Value&
-findOrThrow(const Container<Key, Value, TArgs...>& container,
-            const Key& key,
-            const char* msg)
-{
+template <template <class, class, class...> class Container, class Key,
+          class Value, class... TArgs>
+const Value& findOrThrow(const Container<Key, Value, TArgs...>& container,
+                         const Key& key, const char* msg) {
   auto it = container.find(key);
   if (it == container.end()) {
     throwKeyNotFound<Key>(key, msg);
@@ -38,22 +31,20 @@ findOrThrow(const Container<Key, Value, TArgs...>& container,
   return it->second;
 }
 
-void
-MetaDataReader::loadFromDirectory(const fs::path& directoryPath)
-{
+void MetaDataReader::loadFromDirectory(const fs::path& directoryPath) {
   const fs::path sceneFile = directoryPath / "scene.json";
   const fs::path sampleFile = directoryPath / "sample.json";
   const fs::path sampleDataFile = directoryPath / "sample_data.json";
   const fs::path egoPoseFile = directoryPath / "ego_pose.json";
   const fs::path calibratedSensorFile =
-    directoryPath / "calibrated_sensor.json";
+      directoryPath / "calibrated_sensor.json";
   const fs::path sensorFile = directoryPath / "sensor.json";
 
   scenes = loadScenesFromFile(sceneFile);
   scene2Samples = loadSampleInfos(sampleFile);
   sample2SampleData = loadSampleDataInfos(sampleDataFile);
   calibratedSensorToken2CalibratedSensorInfo =
-    loadCalibratedSensorInfo(calibratedSensorFile);
+      loadCalibratedSensorInfo(calibratedSensorFile);
   sensorToken2CalibratedSensorName = loadCalibratedSensorNames(sensorFile);
 
   // build inverse (EgoPose.token -> Scene.token) map
@@ -71,17 +62,16 @@ MetaDataReader::loadFromDirectory(const fs::path& directoryPath)
 
         // add calibrated sensor info
         auto& calibratedSensorInfoSet =
-          getExistingOrDefault(scene2CalibratedSensorInfo, sceneToken);
+            getExistingOrDefault(scene2CalibratedSensorInfo, sceneToken);
         const auto& calibratedSensorInfo =
-          findOrThrow(calibratedSensorToken2CalibratedSensorInfo,
-                      sampleData.calibratedSensorToken,
-                      "unable to find calibrated sensor");
-        const auto& calibratedSensorName =
-          findOrThrow(sensorToken2CalibratedSensorName,
-                      calibratedSensorInfo.sensorToken,
-                      "unable to find sensor");
+            findOrThrow(calibratedSensorToken2CalibratedSensorInfo,
+                        sampleData.calibratedSensorToken,
+                        "unable to find calibrated sensor");
+        const auto& calibratedSensorName = findOrThrow(
+            sensorToken2CalibratedSensorName, calibratedSensorInfo.sensorToken,
+            "unable to find sensor");
         calibratedSensorInfoSet.insert(CalibratedSensorInfoAndName{
-          calibratedSensorInfo, calibratedSensorName });
+            calibratedSensorInfo, calibratedSensorName});
       }
     }
   }
@@ -91,9 +81,7 @@ MetaDataReader::loadFromDirectory(const fs::path& directoryPath)
   loadFromDirectoryCalled = true;
 }
 
-json::json
-MetaDataReader::slurpJsonFile(const fs::path& filePath)
-{
+json::json MetaDataReader::slurpJsonFile(const fs::path& filePath) {
   std::ifstream file(filePath.string());
   if (!file.is_open()) {
     std::string errMsg = string("Unable to open ") + filePath.string();
@@ -104,9 +92,8 @@ MetaDataReader::slurpJsonFile(const fs::path& filePath)
   return newJson;
 }
 
-std::vector<SceneInfo>
-MetaDataReader::loadScenesFromFile(const fs::path& filePath)
-{
+std::vector<SceneInfo> MetaDataReader::loadScenesFromFile(
+    const fs::path& filePath) {
   auto sceneJsons = slurpJsonFile(filePath);
   std::vector<SceneInfo> sceneInfos;
 
@@ -118,21 +105,20 @@ MetaDataReader::loadScenesFromFile(const fs::path& filePath)
     std::regex_search(sceneIdStr, match, sceneIdRegex);
     SceneId sceneId = std::stoi(match.str(1));
     sceneInfos.push_back(SceneInfo{
-      sceneJson["token"],
-      sceneJson["nbr_samples"],
-      sceneId,
-      sceneJson["name"],
-      sceneJson["description"],
-      sceneJson["first_sample_token"],
+        sceneJson["token"],
+        sceneJson["nbr_samples"],
+        sceneId,
+        sceneJson["name"],
+        sceneJson["description"],
+        sceneJson["first_sample_token"],
     });
   }
 
   return sceneInfos;
 }
 
-std::map<Token, std::vector<SampleInfo>>
-MetaDataReader::loadSampleInfos(const fs::path& filePath)
-{
+std::map<Token, std::vector<SampleInfo>> MetaDataReader::loadSampleInfos(
+    const fs::path& filePath) {
   auto sampleInfos = slurpJsonFile(filePath);
   std::map<Token, std::vector<SampleInfo>> token2Samples;
 
@@ -140,17 +126,16 @@ MetaDataReader::loadSampleInfos(const fs::path& filePath)
     Token sampleToken = sampleInfo["token"];
     Token sceneToken = sampleInfo["scene_token"];
     std::vector<SampleInfo>& samples =
-      getExistingOrDefault(token2Samples, sceneToken);
+        getExistingOrDefault(token2Samples, sceneToken);
     samples.push_back(
-      SampleInfo{ sceneToken, sampleToken, sampleInfo["timestamp"] });
+        SampleInfo{sceneToken, sampleToken, sampleInfo["timestamp"]});
   }
 
   return token2Samples;
 }
 
 std::map<Token, std::vector<SampleDataInfo>>
-MetaDataReader::loadSampleDataInfos(const fs::path& filePath)
-{
+MetaDataReader::loadSampleDataInfos(const fs::path& filePath) {
   auto sampleDataJsons = slurpJsonFile(filePath);
   std::map<Token, std::vector<SampleDataInfo>> sample2SampleData;
 
@@ -158,24 +143,22 @@ MetaDataReader::loadSampleDataInfos(const fs::path& filePath)
     Token sampleToken = sampleDataJson["sample_token"];
     Token sampleDataToken = sampleDataJson["token"];
     std::vector<SampleDataInfo>& sampleDatas =
-      getExistingOrDefault(sample2SampleData, sampleToken);
+        getExistingOrDefault(sample2SampleData, sampleToken);
     sampleDatas.push_back(SampleDataInfo{
-      sampleDataToken,
-      sampleDataJson["timestamp"],
-      sampleDataJson["ego_pose_token"],
-      sampleDataJson["calibrated_sensor_token"],
-      sampleDataJson["fileformat"],
-      sampleDataJson["is_key_frame"],
-      sampleDataJson["filename"],
+        sampleDataToken,
+        sampleDataJson["timestamp"],
+        sampleDataJson["ego_pose_token"],
+        sampleDataJson["calibrated_sensor_token"],
+        sampleDataJson["fileformat"],
+        sampleDataJson["is_key_frame"],
+        sampleDataJson["filename"],
     });
   }
 
   return sample2SampleData;
 }
 
-std::vector<ImuData>
-MetaDataReader::loadImuData(const fs::path& filePath)
-{
+std::vector<ImuData> MetaDataReader::loadImuData(const fs::path& filePath) {
   std::cout << "Loading IMU data from json file" << std::endl;
   auto imuDataJsons = slurpJsonFile(filePath);
   std::vector<ImuData> imuDatas;
@@ -185,20 +168,18 @@ MetaDataReader::loadImuData(const fs::path& filePath)
     auto linear_accel = imuDataJson["linear_accel"];
     auto q = imuDataJson["q"];
     auto rotation_rate = imuDataJson["rotation_rate"];
-    imuDatas.push_back(ImuData{
-        { linear_accel[0], linear_accel[1], linear_accel[2] },
-        { q[0], q[1], q[2], q[3] },
-        { rotation_rate[0], rotation_rate[1], rotation_rate[2] },
-        imuDataJson["utime"]
-    });
+    imuDatas.push_back(
+        ImuData{{linear_accel[0], linear_accel[1], linear_accel[2]},
+                {q[0], q[1], q[2], q[3]},
+                {rotation_rate[0], rotation_rate[1], rotation_rate[2]},
+                imuDataJson["utime"]});
   }
 
   return imuDatas;
 }
 
-std::vector<VehicleData>
-MetaDataReader::loadVehicleData(const fs::path& filePath)
-{
+std::vector<VehicleData> MetaDataReader::loadVehicleData(
+    const fs::path& filePath) {
   std::cout << "Loading Vehicle data from json file" << std::endl;
   auto vehicleDataJsons = slurpJsonFile(filePath);
   std::vector<VehicleData> vehicleDatas;
@@ -212,21 +193,18 @@ MetaDataReader::loadVehicleData(const fs::path& filePath)
     auto rotation_rate = vehicleDataJson["rotation_rate"];
     auto vel = vehicleDataJson["vel"];
     vehicleDatas.push_back(VehicleData{
-        { accel[0], accel[1], accel[2] },
-        { orientation[0], orientation[1], orientation[2], orientation[3]},
-        { pos[0], pos[1], pos[2] },
-        { rotation_rate[0], rotation_rate[1], rotation_rate[2] },
-        { vel[0], vel[1], vel[2] },
-        vehicleDataJson["utime"]
-    });
+        {accel[0], accel[1], accel[2]},
+        {orientation[0], orientation[1], orientation[2], orientation[3]},
+        {pos[0], pos[1], pos[2]},
+        {rotation_rate[0], rotation_rate[1], rotation_rate[2]},
+        {vel[0], vel[1], vel[2]},
+        vehicleDataJson["utime"]});
   }
 
   return vehicleDatas;
 }
 
-EgoPoseInfo
-egoPoseJson2EgoPoseInfo(const json::json& egoPoseJson)
-{
+EgoPoseInfo egoPoseJson2EgoPoseInfo(const json::json& egoPoseJson) {
   EgoPoseInfo egoPoseInfo;
 
   egoPoseInfo.translation[0] = egoPoseJson["translation"][0];
@@ -243,22 +221,19 @@ egoPoseJson2EgoPoseInfo(const json::json& egoPoseJson)
   return egoPoseInfo;
 }
 
-std::map<Token, std::vector<EgoPoseInfo>>
-MetaDataReader::loadEgoPoseInfos(
-  const fs::path& filePath,
-  std::map<Token, Token> sampleDataToken2SceneToken)
-{
-
+std::map<Token, std::vector<EgoPoseInfo>> MetaDataReader::loadEgoPoseInfos(
+    const fs::path& filePath,
+    std::map<Token, Token> sampleDataToken2SceneToken) {
   auto egoPoseJsons = slurpJsonFile(filePath);
   std::map<Token, std::vector<EgoPoseInfo>> sceneToken2EgoPoseInfos;
 
   for (const auto& egoPoseJson : egoPoseJsons) {
     Token sampleDataToken = egoPoseJson["token"];
-    const auto& sceneToken = findOrThrow(sampleDataToken2SceneToken,
-                                         sampleDataToken,
-                                         " Unable to find sample token");
+    const auto& sceneToken =
+        findOrThrow(sampleDataToken2SceneToken, sampleDataToken,
+                    " Unable to find sample token");
     std::vector<EgoPoseInfo>& egoPoses =
-      getExistingOrDefault(sceneToken2EgoPoseInfos, sceneToken);
+        getExistingOrDefault(sceneToken2EgoPoseInfos, sceneToken);
 
     EgoPoseInfo egoPoseInfo = egoPoseJson2EgoPoseInfo(egoPoseJson);
     egoPoses.push_back(egoPoseInfo);
@@ -267,27 +242,25 @@ MetaDataReader::loadEgoPoseInfos(
   return sceneToken2EgoPoseInfos;
 }
 
-std::map<Token, CalibratedSensorInfo>
-MetaDataReader::loadCalibratedSensorInfo(const fs::path& filePath)
-{
+std::map<Token, CalibratedSensorInfo> MetaDataReader::loadCalibratedSensorInfo(
+    const fs::path& filePath) {
   auto calibratedSensorJsons = slurpJsonFile(filePath);
   std::map<Token, CalibratedSensorInfo>
-    calibratedSensorToken2CalibratedSensorInfo;
+      calibratedSensorToken2CalibratedSensorInfo;
 
   for (const auto& calibratedSensorJson : calibratedSensorJsons) {
     Token token = calibratedSensorJson["token"];
     auto translation = calibratedSensorJson["translation"];
     auto rotation = calibratedSensorJson["rotation"];
     CalibratedSensorInfo calibratedSensorInfo{
-      token,
-      calibratedSensorJson["sensor_token"],
-      { translation[0], translation[1], translation[2] },
-      { rotation[0], rotation[1], rotation[2], rotation[3] },
-      boost::none
-    };
+        token,
+        calibratedSensorJson["sensor_token"],
+        {translation[0], translation[1], translation[2]},
+        {rotation[0], rotation[1], rotation[2], rotation[3]},
+        boost::none};
 
     boost::optional<json::json> sensor_intrinsics =
-      calibratedSensorJson["rotation"];
+        calibratedSensorJson["rotation"];
 
     calibratedSensorToken2CalibratedSensorInfo.emplace(token,
                                                        calibratedSensorInfo);
@@ -296,62 +269,54 @@ MetaDataReader::loadCalibratedSensorInfo(const fs::path& filePath)
   return calibratedSensorToken2CalibratedSensorInfo;
 }
 
-std::map<Token, CalibratedSensorName>
-MetaDataReader::loadCalibratedSensorNames(const fs::path& filePath)
-{
+std::map<Token, CalibratedSensorName> MetaDataReader::loadCalibratedSensorNames(
+    const fs::path& filePath) {
   auto calibratedSensorNameJsons = slurpJsonFile(filePath);
   std::map<Token, CalibratedSensorName> sensorToken2CalibratedSensorName;
 
   for (const auto& calibratedSensorNameJson : calibratedSensorNameJsons) {
     sensorToken2CalibratedSensorName.emplace(
-      calibratedSensorNameJson["token"],
-      CalibratedSensorName{ calibratedSensorNameJson["token"],
-                            calibratedSensorNameJson["channel"],
-                            calibratedSensorNameJson["modality"] });
+        calibratedSensorNameJson["token"],
+        CalibratedSensorName{calibratedSensorNameJson["token"],
+                             calibratedSensorNameJson["channel"],
+                             calibratedSensorNameJson["modality"]});
   };
 
   return sensorToken2CalibratedSensorName;
 }
 
-std::vector<Token>
-MetaDataReader::getAllSceneTokens() const
-{
+std::vector<Token> MetaDataReader::getAllSceneTokens() const {
   assert(loadFromDirectoryCalled);
   std::vector<Token> tokens;
-  std::transform(scenes.begin(),
-                 scenes.end(),
-                 std::back_inserter(tokens),
+  std::transform(scenes.begin(), scenes.end(), std::back_inserter(tokens),
                  [](const SceneInfo& sceneInfo) { return sceneInfo.token; });
   return tokens;
 }
 
-boost::optional<SceneInfo>
-MetaDataReader::getSceneInfo(const Token& sceneToken) const
-{
+boost::optional<SceneInfo> MetaDataReader::getSceneInfo(
+    const Token& sceneToken) const {
   assert(loadFromDirectoryCalled);
-  auto it = std::find_if(
-    scenes.begin(), scenes.end(), [&sceneToken](const SceneInfo& sceneInfo) {
-      return sceneInfo.token == sceneToken;
-    });
+  auto it = std::find_if(scenes.begin(), scenes.end(),
+                         [&sceneToken](const SceneInfo& sceneInfo) {
+                           return sceneInfo.token == sceneToken;
+                         });
   if (it == scenes.end()) {
-
     return boost::none;
   }
 
   return boost::optional<SceneInfo>(*it);
 }
 
-std::vector<SampleDataInfo>
-MetaDataReader::getSceneSampleData(const Token& sceneToken) const
-{
+std::vector<SampleDataInfo> MetaDataReader::getSceneSampleData(
+    const Token& sceneToken) const {
   std::vector<SampleDataInfo> sampleDataInfos;
 
   const auto& sceneSamples =
-    findOrThrow(scene2Samples, sceneToken, " sample for scene token");
+      findOrThrow(scene2Samples, sceneToken, " sample for scene token");
   for (const auto& sceneSample : sceneSamples) {
     const Token& sceneSampleToken = sceneSample.token;
     const auto& sceneSampleDatas = findOrThrow(
-      sample2SampleData, sceneSampleToken, " sample data for sample token");
+        sample2SampleData, sceneSampleToken, " sample data for sample token");
 
     for (const SampleDataInfo& sampleData : sceneSampleDatas) {
       sampleDataInfos.push_back(sampleData);
@@ -361,59 +326,47 @@ MetaDataReader::getSceneSampleData(const Token& sceneToken) const
   return sampleDataInfos;
 }
 
-std::vector<ImuData>
-MetaDataReader::getImuData(const fs::path& inPath) const
-{
+std::vector<ImuData> MetaDataReader::getImuData(const fs::path& inPath) const {
   return loadImuData(inPath);
 }
 
-
-std::vector<VehicleData>
-MetaDataReader::getVehicleData(const fs::path& inPath) const
-{
+std::vector<VehicleData> MetaDataReader::getVehicleData(
+    const fs::path& inPath) const {
   return loadVehicleData(inPath);
 }
 
-std::vector<EgoPoseInfo>
-MetaDataReader::getEgoPoseInfo(const Token& sceneToken) const
-{
+std::vector<EgoPoseInfo> MetaDataReader::getEgoPoseInfo(
+    const Token& sceneToken) const {
   return findOrThrow(scene2EgoPose, sceneToken, "ego pose by scene token");
 }
 
-CalibratedSensorInfo
-MetaDataReader::getCalibratedSensorInfo(
-  const Token& calibratedSensorToken) const
-{
+CalibratedSensorInfo MetaDataReader::getCalibratedSensorInfo(
+    const Token& calibratedSensorToken) const {
   return findOrThrow(calibratedSensorToken2CalibratedSensorInfo,
                      calibratedSensorToken,
                      "calibrated sensor info by sensor token");
 }
 
-CalibratedSensorName
-MetaDataReader::getSensorName(const Token& sensorToken) const
-{
-  return findOrThrow(sensorToken2CalibratedSensorName,
-                     sensorToken,
+CalibratedSensorName MetaDataReader::getSensorName(
+    const Token& sensorToken) const {
+  return findOrThrow(sensorToken2CalibratedSensorName, sensorToken,
                      "sensor name by sensor token");
 }
 
 std::vector<CalibratedSensorInfoAndName>
-MetaDataReader::getSceneCalibratedSensorInfo(const Token& sceneToken) const
-{
+MetaDataReader::getSceneCalibratedSensorInfo(const Token& sceneToken) const {
   std::vector<CalibratedSensorInfoAndName> sceneCalibratedSensorInfo;
   const auto& sceneCalibratedSensorInfoSet =
-    findOrThrow(scene2CalibratedSensorInfo,
-                sceneToken,
-                "calibrated sensor info by scene token");
+      findOrThrow(scene2CalibratedSensorInfo, sceneToken,
+                  "calibrated sensor info by scene token");
   std::copy(sceneCalibratedSensorInfoSet.begin(),
             sceneCalibratedSensorInfoSet.end(),
             std::back_inserter(sceneCalibratedSensorInfo));
   return sceneCalibratedSensorInfo;
 }
 
-boost::optional<SceneInfo>
-MetaDataReader::getSceneInfoByNumber(const uint32_t sceneNumber) const
-{
+boost::optional<SceneInfo> MetaDataReader::getSceneInfoByNumber(
+    const uint32_t sceneNumber) const {
   boost::optional<SceneInfo> sceneInfoOpt;
   for (const auto& scene : scenes) {
     if (scene.sceneId == sceneNumber) {
@@ -423,4 +376,4 @@ MetaDataReader::getSceneInfoByNumber(const uint32_t sceneNumber) const
   return sceneInfoOpt;
 }
 
-}
+}  // namespace nuscenes2bag
